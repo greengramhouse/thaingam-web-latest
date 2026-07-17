@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ======================= Enums =======================
+// เพิ่ม enum อื่น (MediaType) ตอนโค้ดโยงไปถึง content models ที่เหลือ
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+// ==================== Better Auth ====================
+// relation ไป content ที่เหลือ (mediaWorks/events/pages) จะเติมกลับตอนเพิ่มแต่ละ model
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  role          Role      @default(TEACHER)
+  banned        Boolean?  @default(false)
+  banReason     String?
+  banExpires    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  news          News[]
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String   @unique
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String? // admin plugin (impersonation)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ====================== Content ======================
+// วางเฉพาะที่ News (Phase 4.4.1) โยงถึง — MediaWork/Event/Staff/... เพิ่มตอนทำ module นั้น
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  news        News[]
+
+  @@map("category")
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+  news News[]
+  // mediaWorks จะเติมกลับตอนทำ Phase 4.4.3
+
+  @@map("tag")
+}
+
+model News {
+  id         String        @id @default(cuid())
+  title      String
+  // slug ตั้งเองตอนเขียนข่าว (อังกฤษ+เลข) — ไม่ auto-gen จากชื่อไทย
+  slug       String        @unique
+  excerpt    String?
+  content    String // rich text (HTML จาก Tiptap)
+  coverImage String? // Cloudinary secure_url
+  status     PublishStatus @default(DRAFT)
+  featured   Boolean       @default(false)
+  // เซ็ตตอนกด publish ครั้งแรก แล้วคงค่าไว้ (unpublish/republish ไม่รีเซ็ต)
+  publishedAt DateTime?
+  viewCount   Int      @default(0)
+  categoryId  String?
+  // ลบหมวดหมู่แล้วข่าวต้องไม่หาย → คืน null
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags        Tag[]
+  authorId    String?
+  // ลบ user แล้วข่าวต้องไม่หายตามไปด้วย → คืน null (spec เดิมบังคับ authorId; ตั้งใจคลายให้ nullable)
+  author      User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([categoryId])
+  @@index([authorId])
+  @@map("news")
+}
