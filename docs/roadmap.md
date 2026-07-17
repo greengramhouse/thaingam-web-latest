@@ -212,7 +212,28 @@
         · **positive control:** ADMIN ยิง request รูปแบบเดียวกันเป๊ะ → `"ok":true` สร้างได้จริง
         ⇒ พิสูจน์ว่าที่ TEACHER ถูกบล็อกคือ **RBAC** ไม่ใช่ request ผิดรูป *(ไม่มี control ข้อนี้ = สรุปไม่ได้)*
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** เพิ่ม/แก้/ลบ ผ่าน dialog, กดแก้รายการอื่นต่อกันดูค่าค้าง, toast
-- [ ] **4.4.3 MediaWork** — type (YOUTUBE/VIDEO/ARTICLE) เปลี่ยน field ตาม type, validate youtubeUrl
+- [x] **4.4.3 MediaWork** — type (YOUTUBE/VIDEO/ARTICLE) เปลี่ยน field ตาม type, validate youtubeUrl ✅
+  - [x] schema: `MediaWork` + enum `MediaType` + `User.mediaWorks` + `Tag.mediaWorks` → migrate `add_media_work`
+        *(`authorId` nullable + `SetNull` — คลายจาก spec ให้ตรงกับ News · ตรวจ SQL แล้วไม่มี `DROP` ข้อมูลเดิมอยู่ครบ · join table = `_MediaWorkToTag`)*
+  - [x] `lib/youtube.ts` — `extractYoutubeId()` รองรับ watch/youtu.be/embed/shorts/live/m./nocookie + `youtubeEmbedUrl()`/`youtubeThumbnailUrl()` *(4.6 จะ reuse ตอนฝังวิดีโอ)*
+  - [x] `lib/validations/media-work.ts` — **object แบน + `superRefine`** ไม่ใช้ discriminated union
+        *(RHF ต้องการชุด field คงที่ ไม่งั้นค่าที่กรอกหายตอนสลับชนิด)* — บังคับเฉพาะ field ของชนิดที่เลือก
+  - [x] `server/actions/media-work.ts` — create/update/delete/togglePublish gate ด้วย `canManageContent` ทุกตัว
+        · **`pickTypeFields()` ล้าง field ของชนิดอื่นเป็น null ตอนบันทึก** (ไม่งั้นสลับชนิดแล้วข้อมูลเก่าค้าง หน้า public เดาไม่ออกว่าจะแสดงอะไร)
+  - [x] `lib/media-work.ts` — `mediaWorkThumbnail()` **derive รูปปก YouTube ตอนแสดงผล ไม่เก็บลง DB** (ดูบั๊กด้านล่าง) · ใช้แล้วในคอลัมน์รูปปกของตาราง
+  - [x] หน้า: `/admin/works` (ค้นหา + กรองสถานะ + **กรองชนิด** + pagination + คอลัมน์รูปปก) · `/new` · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify: guest→307 · SUPER_ADMIN→200 · **TEACHER→307 `/` + ยิง action ตรงถูกปฏิเสธ ไม่มีอะไรเข้า DB**
+        *(positive control: action id เดียวกัน + SUPER_ADMIN → `"ok":true` สร้างได้จริง)*
+        · **`extractYoutubeId` ทดสอบ 19/19 เคส** (รวม `javascript:alert(1)`, vimeo, id สั้นเกิน → null)
+        · ลิงก์ไม่ใช่ YouTube → `ข้อมูลไม่ถูกต้อง` ไม่มี record หลุดเข้า DB
+        · สลับ YOUTUBE→ARTICLE → `youtubeUrl` เป็น NULL, `content` ถูกเซ็ต ✅ · ล้างข้อมูลทดสอบแล้ว
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** สลับชนิดในฟอร์มแล้วช่องเปลี่ยน, Tiptap ในโหมด ARTICLE, อัปรูปปก, กดลบ/publish
+  > 🐛 **บั๊กที่เจอตอน verify (แก้แล้ว) — รูปปก YouTube ค้างคลิปเก่า:**
+  > เดิม derive รูปปกจากคลิปแล้ว**เก็บลง DB** → พอเปิดหน้าแก้ไข ฟอร์มโหลดค่านั้นกลับมาเป็นค่าในช่อง
+  > → กลายเป็น "ค่าที่แอดมินตั้งเอง" แยกไม่ออก → **เปลี่ยนลิงก์คลิปทีหลัง รูปปกยังชี้คลิปเก่าเงียบ ๆ** (พิสูจน์แล้วว่าเกิดจริง)
+  > → แก้: `thumbnail` ใน DB = เฉพาะที่แอดมินตั้งเอง (null = ยังไม่ตั้ง) · รูปปกอัตโนมัติคำนวณตอนแสดงผล
+  > ⚠️ **`migrate dev` ไม่ generate client** (เข้าใจผิดมาก่อน — ดู `problems.md` 3.1) → `prisma.mediaWork` ไม่มี ต้อง `prisma generate` + **restart dev server**
+  >    *(ตอน verify เจอ 500 เพราะ dev server ตัวเก่ายังรันค้างที่ :4000 ถือ client เก่าไว้ — ตัวใหม่ start ไม่ขึ้นเงียบ ๆ ด้วย `EADDRINUSE`)*
 - [ ] **4.4.4 Events** — date range (multi-day), allDay, color picker, location
 - [ ] **4.4.5 Staff** — ทำเนียบบุคลากร + รูป + order (drag/หมายเลข) + isActive
 - [ ] **4.4.6 Albums & Photos** — album + upload หลายรูป + จัดลำดับ + ดู likeCount

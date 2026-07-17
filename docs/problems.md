@@ -120,14 +120,30 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 
 ## 3. 🗄️ Prisma 7 (นอกจาก P2002)
 
-### 3.1 `migrate deploy` **ไม่ generate client ใหม่** (ต่างจาก `migrate dev`)
+### 3.1 🔥 **ไม่มี migrate ตัวไหน generate client ให้เลย** — ต้อง `prisma generate` เองเสมอ
 
-- แก้ `@@map`/rename ตาราง แล้วลืม generate → `P2021 TableDoesNotExist`
-- ต้อง `pnpm prisma generate` เอง
+- เดิมเข้าใจว่า "`migrate deploy` ไม่ generate แต่ `migrate dev` generate ให้" — **ผิด**
+  ยืนยัน 2026-07-17 (Phase 4.4.3): `migrate dev --name add_media_work` ลงตารางสำเร็จ
+  แต่ `lib/generated/prisma/client.ts` **ยังเป็นไฟล์เดิมของเมื่อวาน** → `prisma.mediaWork` ไม่มี
+- **อาการ:** `Property 'mediaWork' does not exist on type 'PrismaClient'` หรือ `P2021 TableDoesNotExist`
+  ตอน rename/`@@map` (ตาราง/model ใหม่มีใน DB แล้วแต่ client ไม่รู้จัก)
+- ✅ **ท่ามาตรฐานหลังแตะ schema ทุกครั้ง:**
+  ```bash
+  pnpm prisma migrate dev --name <name>   # (หรือเขียน migration.sql เอง + migrate deploy)
+  pnpm prisma generate                    # ← ห้ามลืม ไม่มีใครทำให้
+  # แล้ว restart dev server (ดู 3.2)
+  ```
+- ℹ️ `--skip-seed` **ไม่มีแล้วใน Prisma 7** (ใส่ไปจะเด้ง help ออกมา) — seed เป็น upsert รันซ้ำได้อยู่แล้ว
 
 ### 3.2 dev server ถือ client ไว้ในหน่วยความจำ → **ต้อง restart**
 
 - ไม่ restart หลัง generate จะได้ `TypeError: Cannot read properties of undefined (reading 'count')` (model ใหม่เป็น `undefined`)
+- 😈 **กับดักซ้อน (เจอ 4.4.3):** สั่ง `pnpm dev` ใหม่ทั้งที่ตัวเก่ายังรันอยู่ → ตัวใหม่ตายทันทีด้วย
+  `EADDRINUSE :::4000` **แต่ตัวเก่ายังตอบ request อยู่** → เห็น 500 ที่หาสาเหตุไม่เจอ เพราะนึกว่ารัน server ใหม่แล้ว
+  ```powershell
+  # ฆ่าตัวที่ค้างพอร์ต 4000 ก่อน
+  Get-NetTCPConnection -LocalPort 4000 -State Listen | Select -Expand OwningProcess -Unique | ForEach { Stop-Process -Id $_ -Force }
+  ```
 
 ### 3.3 rename ตาราง — **อย่าให้ Prisma ทำเอง จะข้อมูลหาย**
 
@@ -276,14 +292,20 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
 - ประวัติรายเฟสอยู่ใน `roadmap.md` อยู่แล้ว → **git history ไม่ต้องซ้ำ** (ก้อนแรกเลยรวบ 4.0–4.4.1 ก้อนเดียว
   เพราะ `package.json`/`pnpm-lock.yaml`/`schema.prisma` สะสมข้ามเฟส แยกย้อนหลังแล้ว commit กลางทาง build ไม่ผ่าน)
 
-### 8.3 อย่า abstract ก่อนเห็น pattern ซ้ำจริง
+### 8.3 อย่าเก็บค่าที่ "คำนวณได้" ลง DB ถ้ามันจะกลายเป็นค่าที่แก้เองไม่ได้
+
+- เจอตอน 4.4.3: derive รูปปกจากลิงก์ YouTube แล้ว**เก็บลง DB** → หน้าแก้ไขโหลดค่านั้นกลับมาเป็นค่าในช่อง
+  → แยกไม่ออกแล้วว่า "ระบบเดาให้" หรือ "แอดมินตั้งเอง" → **เปลี่ยนลิงก์คลิป รูปปกยังชี้คลิปเก่าเงียบ ๆ**
+- → เก็บเฉพาะ**สิ่งที่ผู้ใช้ตั้งเอง** (null = ยังไม่ตั้ง) แล้ว**คำนวณตอนแสดงผล** — ดู `mediaWorkThumbnail()` ใน `lib/media-work.ts`
+
+### 8.4 อย่า abstract ก่อนเห็น pattern ซ้ำจริง
 
 - 4.3 ตั้งใจ**ไม่**ทำ `DataTable` generic → 4.4.1 ใช้ `table-search` + `table-pagination` + `ui/table` ตรง ๆ
 - พอถึง **4.4.2 (ผู้ใช้รายที่ 2)** ถึงยกของกลางออกมา: `slugSchema` → `lib/validations/slug.ts`,
   `isUniqueSlugError` → `lib/prisma-errors.ts`, `ActionResult` → `server/actions/types.ts`
 - ⚠️ ไฟล์ `"use server"` **export ได้แต่ async function** → type ต้องอยู่ไฟล์อื่น
 
-### 8.4 ธีมสียังเป็น placeholder
+### 8.5 ธีมสียังเป็น placeholder
 
 - base color = `neutral` → **ทุก token chroma = 0 (เทาล้วน ไม่มีสี)**
   `--primary: oklch(0.205 0 0)` vs `--foreground: oklch(0.145 0 0)` ต่างกันแค่ความเข้ม

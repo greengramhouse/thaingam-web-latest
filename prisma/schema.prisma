@@ -13,7 +13,6 @@ datasource db {
 }
 
 // ======================= Enums =======================
-// เพิ่ม enum อื่น (MediaType) ตอนโค้ดโยงไปถึง content models ที่เหลือ
 enum Role {
   SUPER_ADMIN
   ADMIN
@@ -25,8 +24,15 @@ enum PublishStatus {
   PUBLISHED
 }
 
+// ชนิดของผลงาน/สื่อการสอน — กำหนดว่าใช้ field ไหน (youtubeUrl / videoUrl / content)
+enum MediaType {
+  YOUTUBE
+  VIDEO
+  ARTICLE
+}
+
 // ==================== Better Auth ====================
-// relation ไป content ที่เหลือ (mediaWorks/events/pages) จะเติมกลับตอนเพิ่มแต่ละ model
+// relation ไป content ที่เหลือ (events/pages) จะเติมกลับตอนเพิ่มแต่ละ model
 model User {
   id            String    @id
   name          String
@@ -42,6 +48,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   news          News[]
+  mediaWorks    MediaWork[]
   @@map("user")
 }
 
@@ -105,11 +112,11 @@ model Category {
 }
 
 model Tag {
-  id   String @id @default(cuid())
-  name String
-  slug String @unique
-  news News[]
-  // mediaWorks จะเติมกลับตอนทำ Phase 4.4.3
+  id         String      @id @default(cuid())
+  name       String
+  slug       String      @unique
+  news       News[]
+  mediaWorks MediaWork[]
 
   @@map("tag")
 }
@@ -141,4 +148,35 @@ model News {
   @@index([categoryId])
   @@index([authorId])
   @@map("news")
+}
+
+/// ผลงาน / สื่อการสอน — 1 รายการเป็นได้ชนิดเดียว (type) แล้วใช้ field ตามชนิดนั้น
+/// YOUTUBE → youtubeUrl · VIDEO → videoUrl · ARTICLE → content
+/// อีก 2 field ที่ไม่ใช่ชนิดนั้นถูกล้างเป็น null ตอนบันทึก (กันข้อมูลค้างตอนสลับชนิด)
+model MediaWork {
+  id          String        @id @default(cuid())
+  title       String
+  // slug ตั้งเอง ไม่ auto-gen จากชื่อไทย (เหมือน News — ดู lib/validations/slug.ts)
+  slug        String        @unique
+  description String?
+  type        MediaType
+  youtubeUrl  String? // type = YOUTUBE
+  videoUrl    String? // type = VIDEO
+  content     String? // type = ARTICLE (rich text จาก Tiptap)
+  thumbnail   String? // Cloudinary secure_url
+  status      PublishStatus @default(DRAFT)
+  featured    Boolean       @default(false)
+  // เซ็ตตอนกด publish ครั้งแรก แล้วคงค่าไว้ (เหมือน News)
+  publishedAt DateTime?
+  tags        Tag[]
+  authorId    String?
+  // ลบ user แล้วผลงานต้องไม่หายตามไปด้วย → คืน null (spec เดิมบังคับ authorId; คลายให้ตรงกับ News)
+  author      User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type, status])
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@map("media_work")
 }
