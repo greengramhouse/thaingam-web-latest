@@ -1,14 +1,21 @@
 import "server-only";
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
 export type Role = "SUPER_ADMIN" | "ADMIN" | "TEACHER";
 
-/** ดึง session ฝั่ง server (จาก cookie) — null ถ้าไม่ล็อกอิน */
-export async function getSession() {
+/**
+ * ดึง session ฝั่ง server (จาก cookie) — null ถ้าไม่ล็อกอิน
+ *
+ * ครอบด้วย React `cache` เพราะ layout กับ page เรียก requireRole() กันคนละที
+ * ใน request เดียว → เดิมยิง DB ซ้ำ 2 รอบ (Better Auth ใช้ Prisma ตรง ๆ ไม่ใช่ fetch
+ * เลยไม่มี memoize ให้อัตโนมัติ) · dedupe ต่อ 1 request เท่านั้น ไม่ข้าม request
+ */
+export const getSession = cache(async () => {
   return auth.api.getSession({ headers: await headers() });
-}
+});
 
 export async function getCurrentUser() {
   const session = await getSession();

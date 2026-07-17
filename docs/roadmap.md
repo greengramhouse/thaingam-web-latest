@@ -157,10 +157,13 @@
 
 **เป้าหมาย:** จัดการข้อมูลได้ครบทุกโมเดล
 
-> 🔧 **หนี้เล็ก ๆ ที่ควรเก็บก่อนทำ 4.4.2** *(เจอ 2026-07-17)*: **session ถูก query ซ้ำ 2 รอบต่อ 1 request**
-> เพราะ `app/admin/layout.tsx` เรียก `requireRole()` และ `page.tsx` เรียกอีกที (ทุกหน้าที่ทำไปเป็นแบบนี้หมด)
-> แก้: ครอบ `getSession` ใน `lib/rbac.ts` ด้วย **`React.cache()`** (dedupe ใน request เดียว) + พิจารณาเปิด
-> **`session.cookieCache`** ของ Better Auth *(verify แล้วว่ามีจริงใน `@better-auth/core` → `init-options.ts`)* เพื่อไม่ต้องแตะ DB เลย
+> ✅ **เก็บหนี้ session query ซ้ำแล้ว (2026-07-17)** — เดิม `layout.tsx` เรียก `requireRole()` และ `page.tsx` เรียกอีกที
+> → ครอบ `getSession` ใน `lib/rbac.ts` ด้วย **`React.cache()`** (Next docs `02-guides/authentication.md` ใช้ pattern นี้กับไฟล์ DAL + `server-only` ตรง ๆ)
+> **วัดจริงด้วย Postgres `log_statement=all`: session lookup 2→1, user lookup 2→1 ต่อ request** (ทั้ง `/admin` และ `/admin/news`) · guard ยังทำงาน (guest→307, admin→200)
+> ⏭️ ยังเหลือทางเลือก **`session.cookieCache`** ของ Better Auth ถ้าอยากตัด DB hit ทิ้งทั้งหมด — ยังไม่เปิด ค่อยพิจารณาตอน 4.8 (perf)
+> ⚠️ **Prisma 7 + driver adapter: `log: ['query']` ไม่ emit อะไรเลย** — จะดู query จริงต้องเปิด log ฝั่ง Postgres แทน
+>    (`ALTER SYSTEM SET log_statement='all'` — สั่งทีละคำสั่ง ห้ามรวมใน `-c` เดียว ไม่งั้นติด transaction block) แล้ว `docker logs thaingam-postgres`
+>    · PG log extended protocol เป็น `execute <unnamed>:` **ไม่ใช่** `statement:` และตารางขึ้นเป็น `"public"."session"` — grep ให้ตรง
 **แต่ละ module ทำเป็นชุด:** `list (DataTable)` → `create form` → `edit form` → `delete` → `Server Actions + Zod` → `RBAC`
 
 > กติกา RBAC: **ADMIN/SUPER_ADMIN จัดการเนื้อหาได้ทั้งหมด + publish** · **TEACHER ยังไม่มีสิทธิ์ในส่วนนี้**
