@@ -1,14 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isUniqueSlugError } from "@/lib/prisma-errors";
 import { canManageContent, getCurrentUser } from "@/lib/rbac";
 import { newsFormSchema } from "@/lib/validations/news";
-
-export type ActionResult =
-  | { ok: true; id: string }
-  | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
+import type { ActionResult } from "@/server/actions/types";
 
 /**
  * ทุก action ต้องเช็คสิทธิ์เองเสมอ — proxy.ts เช็คแค่ว่ามี cookie
@@ -18,29 +15,6 @@ async function requireContentManager() {
   const user = await getCurrentUser();
   if (!user || !canManageContent(user.role)) return null;
   return user;
-}
-
-/**
- * เช็คว่า error คือ "slug ซ้ำ" หรือไม่
- *
- * ⚠️ Prisma 7 + driver adapter (@prisma/adapter-pg) **ไม่ใส่ `meta.target`** แบบที่ Prisma รุ่นก่อนทำ
- *    แต่เก็บฟิลด์ที่ชนไว้ที่ `meta.driverAdapterError.cause.constraint.fields` แทน
- *    เลยต้องอ่านทั้งสองที่ ไม่งั้น slug ซ้ำจะตกไปเป็น error กว้าง ๆ แทนที่จะขึ้นตรงช่อง slug
- */
-function isUniqueSlugError(error: unknown) {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2002") {
-    return false;
-  }
-
-  const meta = error.meta as
-    | {
-        target?: string[];
-        driverAdapterError?: { cause?: { constraint?: { fields?: string[] } } };
-      }
-    | undefined;
-
-  const fields = meta?.target ?? meta?.driverAdapterError?.cause?.constraint?.fields;
-  return fields?.includes("slug") ?? false;
 }
 
 function revalidateNews(slug?: string) {

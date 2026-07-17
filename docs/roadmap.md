@@ -192,7 +192,26 @@
   >    (จำไว้ให้ตัวที่พิมพ์ถัดไป) ไม่แทรกอะไรบนจอ ดูเหมือนปุ่มเสีย → เช็ค `selection.empty && !isActive("link")` แล้ว `insertContent` URL เป็นข้อความที่มี link mark แทน
   > ⚠️ **`migrate deploy` ไม่ generate client ใหม่** (ต่างจาก `migrate dev`) — ถ้า rename ตาราง ต้อง `prisma generate` + **restart dev server** เอง
   > ⚠️ **lucide v1 ตัดไอคอนแบรนด์** (`Youtube`) ออกแล้ว → ใช้ `SquarePlay`
-- [ ] **4.4.2 Categories & Tags** — CRUD + slug อัตโนมัติ
+- [x] **4.4.2 Categories & Tags** — CRUD ทั้งคู่ในหน้าเดียว (`/admin/categories` ตามเมนู spec §5) ✅
+  > ❌ **ยกเลิก "slug อัตโนมัติ" ที่เคยเขียนไว้ (ตัดสินใจ 2026-07-17)** — ชื่อหมวดหมู่เป็นภาษาไทย แต่ `slugSchema` บังคับ `a-z0-9-`
+  > → auto-gen จากชื่อไทยได้ **string ว่าง** ใช้ไม่ได้จริง · slug ที่ต้องการคือ**คำแปลอังกฤษที่คนเลือกเอง**
+  > (seed: `ข่าวประชาสัมพันธ์`→`announcements`, `จัดซื้อจัดจ้าง`→`procurement`) ไม่มีอัลกอริทึมไหนทำให้ได้
+  > → **พิมพ์เองเหมือนข่าว** สม่ำเสมอทั้งระบบ *(ทางเลือกที่ทิ้งไป: ทับศัพท์ไทย→อังกฤษ ได้ `khao-prachasamphan` — อัตโนมัติจริงแต่ URL อ่านไม่รู้เรื่อง)*
+  - [x] ไม่ต้อง migrate — `Category`/`Tag` วางไว้แล้วตั้งแต่ 4.4.1
+  - [x] `lib/validations/slug.ts` — **ยก `slugSchema` ออกจาก `news.ts` เป็นของกลาง** (มีผู้ใช้ 2 รายแล้ว)
+  - [x] `lib/prisma-errors.ts` — **ยก `isUniqueSlugError()` ออกจาก `server/actions/news.ts`** + ทำเป็น `isUniqueError(error, field)` ทั่วไป (กับดัก P2002 ของ Prisma 7 อยู่ที่เดียวจบ)
+  - [x] `server/actions/types.ts` — ย้าย `ActionResult` มาไว้กลาง (ไฟล์ `"use server"` export ได้แต่ async function → type ต้องอยู่นอก · และ taxonomy ไม่ต้อง import ข้ามไปหา news)
+  - [x] `lib/validations/taxonomy.ts` · `server/actions/taxonomy.ts` — create/update/delete × category/tag gate ด้วย `canManageContent` ทุกตัว
+  - [x] component: `taxonomy-dialog` (ฟอร์มใน dialog ใช้ร่วมกัน 2 kind — มีแค่ 2–3 ช่อง ไม่คุ้มเปลี่ยนหน้าแบบฟอร์มข่าว) · `taxonomy-row-actions` · `taxonomy-add-button` · shadcn `dialog` (เพิ่มใหม่ เดิมมีแค่ `alert-dialog`)
+  - [x] ลบแล้วข่าวไม่หาย + **บอกผลให้ชัดใน dialog ยืนยัน**: หมวดหมู่ → ข่าวกลายเป็น "ไม่มีหมวดหมู่" (`SetNull`) · แท็ก → ข่าวถูกถอดแท็กออก (m-n)
+  - [x] เปิดเมนู `ready:true`
+  - [x] ✅ verify: guest→307 · SUPER_ADMIN/ADMIN→200 เห็นปุ่มจัดการ · **TEACHER→307 `/`** · หมวดหมู่ seed ขึ้นครบ 5 · empty state แท็กขึ้น
+        · **แท็กที่เพิ่ม โผล่ในฟอร์มข่าวทันที** (แทรก DB → ฟอร์มเห็น) · ล้างข้อมูลทดสอบกลับสภาพเดิมแล้ว
+  - [x] 🔒 **ทดสอบ Server Action โดยตรง** (ข้าม UI — ดึง action id จาก `.next/dev/server/app/admin/categories/page/server-reference-manifest.json`
+        แล้ว POST `Next-Action: <id>`): **TEACHER โดนปฏิเสธทั้ง 6 action** + ไม่มีอะไรเข้า DB
+        · **positive control:** ADMIN ยิง request รูปแบบเดียวกันเป๊ะ → `"ok":true` สร้างได้จริง
+        ⇒ พิสูจน์ว่าที่ TEACHER ถูกบล็อกคือ **RBAC** ไม่ใช่ request ผิดรูป *(ไม่มี control ข้อนี้ = สรุปไม่ได้)*
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** เพิ่ม/แก้/ลบ ผ่าน dialog, กดแก้รายการอื่นต่อกันดูค่าค้าง, toast
 - [ ] **4.4.3 MediaWork** — type (YOUTUBE/VIDEO/ARTICLE) เปลี่ยน field ตาม type, validate youtubeUrl
 - [ ] **4.4.4 Events** — date range (multi-day), allDay, color picker, location
 - [ ] **4.4.5 Staff** — ทำเนียบบุคลากร + รูป + order (drag/หมายเลข) + isActive

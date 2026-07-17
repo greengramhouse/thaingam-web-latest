@@ -1,14 +1,5 @@
 import { z } from "zod";
-
-/**
- * slug ตั้งเองตอนเขียนข่าว (ไม่ auto-gen จากชื่อไทย) — บังคับอังกฤษพิมพ์เล็ก/เลข/ขีดกลาง
- * ห้ามขึ้นหรือลงท้ายด้วย "-" และห้าม "--" ติดกัน
- */
-export const slugSchema = z
-  .string()
-  .min(1, "กรุณากรอก slug")
-  .max(100, "slug ยาวเกินไป (ไม่เกิน 100 ตัวอักษร)")
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "slug ใช้ได้เฉพาะ a-z, 0-9 และ - (เช่น wai-kru-2569)");
+import { slugSchema } from "@/lib/validations/slug";
 
 export const newsFormSchema = z.object({
   title: z.string().min(1, "กรุณากรอกหัวข้อข่าว").max(200, "หัวข้อยาวเกินไป (ไม่เกิน 200 ตัวอักษร)"),
