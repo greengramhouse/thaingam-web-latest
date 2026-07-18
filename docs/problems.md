@@ -110,6 +110,20 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
   แต่ `admin/create-user` พัง (เจอตอน Phase 4.3)
 - ทดสอบ endpoint พวกนี้ด้วย curl ต้องส่ง `-H "Origin: http://localhost:4000"` ไม่งั้นได้ `403 MISSING_OR_NULL_ORIGIN`
 
+### 2.4 dev server ตอบ 500 ทุกหน้า — `EPERM rename .next/dev/...manifest.js`
+
+- อาการ: เพิ่งสั่ง `pnpm dev` แล้ว**ทุก** route เป็น **500** · log ขึ้นซ้ำ ๆ
+  `Error: EPERM: operation not permitted, rename '...\.next\dev\server\...-manifest.js.tmp.xxx' -> '...-manifest.js'`
+- สาเหตุ (Windows): มี process เก่าค้าง lock ไฟล์ใน `.next` หรือ AV เข้าจับ → Turbopack เขียน manifest ทับไม่ได้
+- ✅ **แก้:** kill ตัวที่ค้างพอร์ต 4000 → ลบ `.next` ทิ้ง → `pnpm dev` ใหม่
+  ```powershell
+  Get-NetTCPConnection -LocalPort 4000 -State Listen | Select -Expand OwningProcess -Unique | ForEach { Stop-Process -Id $_ -Force }
+  ```
+  ```bash
+  rm -rf .next && pnpm dev
+  ```
+- ℹ️ อย่าเพิ่งไล่หาบั๊กในโค้ดที่เพิ่งเขียน — 500 แบบนี้เป็น build cache ไม่ใช่ตรรกะ (เจอ 4.4.4)
+
 ### 2.3 Database dev
 
 - Docker container `thaingam-postgres`, host port **5436** → 5432, db `thaingamweb`, user **`tguser`** (ไม่ใช่ `postgres`)

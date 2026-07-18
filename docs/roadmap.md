@@ -237,7 +237,25 @@
   > → แก้: `thumbnail` ใน DB = เฉพาะที่แอดมินตั้งเอง (null = ยังไม่ตั้ง) · รูปปกอัตโนมัติคำนวณตอนแสดงผล
   > ⚠️ **`migrate dev` ไม่ generate client** (เข้าใจผิดมาก่อน — ดู `problems.md` 3.1) → `prisma.mediaWork` ไม่มี ต้อง `prisma generate` + **restart dev server**
   >    *(ตอน verify เจอ 500 เพราะ dev server ตัวเก่ายังรันค้างที่ :4000 ถือ client เก่าไว้ — ตัวใหม่ start ไม่ขึ้นเงียบ ๆ ด้วย `EADDRINUSE`)*
-- [ ] **4.4.4 Events** — date range (multi-day), allDay, color picker, location
+- [x] **4.4.4 Events** — date range (multi-day), allDay, color picker, location ✅
+  - [x] schema: `Event` + `User.events` → migrate `add_event`
+        *(`authorId` nullable + `SetNull` — คลายจาก spec ให้ตรงกับ News/MediaWork · ไม่มี slug/tags/featured · `status` default `PUBLISHED`)*
+  - [x] `lib/event.ts` — date helpers **จัดการ timezone เอง** (pure, ไม่มี `server-only` เพราะ validation ฝั่ง client import)
+        · `parseEventDateInput`/`eventDateInputValue` (round-trip date↔string) · `formatEventRange` (ช่วงเวลาไทย reuse ได้ที่ปฏิทิน 4.6)
+  - [x] `lib/validations/event.ts` (Zod) — object แบน + `superRefine` เช็ค `endDate >= startDate` · `EVENT_COLOR_PRESETS` (hex 7 สี)
+  - [x] `server/actions/event.ts` — create/update/delete/togglePublish gate ด้วย `canManageContent` ทุกตัว · แปลง string→Date ตอนบันทึก
+  - [x] component: `event-form` (allDay switch สลับ `<input date>`↔`<input datetime-local>` + normalize ค่า · color picker preset+custom · cover) · `event-row-actions`
+  - [x] หน้า: `/admin/events` (ค้นหา + กรองสถานะ + pagination + จุดสีในตาราง) · `/new` · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน, ทดสอบ HTTP จริงบน `:4000`):
+        guest→307 `/login` · **SUPER_ADMIN→200** list/new/edit · **TEACHER→307 `/` + ยิง action ตรงถูกปฏิเสธ (`ไม่มีสิทธิ์`) ไม่มีอะไรเข้า DB**
+        *(positive control: action id + payload เดียวกันเป๊ะ + SUPER_ADMIN → `ok:true` สร้างได้จริง)*
+        · **date helper ทดสอบ 15 เคส** (round-trip timed/allDay, ไม่เพี้ยนวันข้าม timezone, end<start ตรวจจับ, formatEventRange 4 รูปแบบ)
+        · **allDay multi-day → DB เก็บเป็น UTC ของเที่ยงคืนท้องถิ่นถูกต้อง** (`2026-08-01` local → `2026-07-31 17:00 UTC`) · edit โหลดกลับ round-trip ตรง · ล้างข้อมูลทดสอบแล้ว
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** สลับ allDay แล้วช่องวัน/เวลาเปลี่ยน + ค่าไม่หาย, color picker, สร้าง/แก้/ลบผ่าน UI, toast
+  > 📝 **ปีในตารางแสดงเป็น ค.ศ. 2 หลัก** (`d MMM yy` locale `th` → "1 ส.ค. 26" ไม่ใช่ พ.ศ. 69) — **ตรงกับ news/works ทั้งแอป** (ไม่ใช่บั๊ก)
+  >    ถ้าจะเปลี่ยนเป็น พ.ศ. ต้องทำพร้อมกันทั้งเว็บ → ยกไปพิจารณารวมที่ Phase 4.8
+  > 🐛 **Windows: dev server EPERM rename `.next/dev/...manifest.js`** (เจอตอน start เซิร์ฟหลัง generate) → หน้าเป็น 500 ทุกอัน
+  >    แก้: kill process พอร์ต 4000 + `rm -rf .next` แล้ว `pnpm dev` ใหม่ → หายสนิท (ดู problems.md 2.4)
 - [ ] **4.4.5 Staff** — ทำเนียบบุคลากร + รูป + order (drag/หมายเลข) + isActive
 - [ ] **4.4.6 Albums & Photos** — album + upload หลายรูป + จัดลำดับ + ดู likeCount
 - [ ] **4.4.7 Documents** — ศูนย์ดาวน์โหลด + fileUrl + หมวด

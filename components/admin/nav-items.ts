@@ -50,7 +50,7 @@ export const navGroups: NavGroup[] = [
       { href: "/admin/news", label: "ข่าวสาร", icon: Newspaper, ready: true },
       { href: "/admin/categories", label: "หมวดหมู่ & แท็ก", icon: Tags, ready: true },
       { href: "/admin/works", label: "ผลงาน / สื่อการสอน", icon: Video, ready: true },
-      { href: "/admin/events", label: "กิจกรรม & ปฏิทิน", icon: Calendar, ready: false, phase: "4.4.4" },
+      { href: "/admin/events", label: "กิจกรรม & ปฏิทิน", icon: Calendar, ready: true },
     ],
   },
   {

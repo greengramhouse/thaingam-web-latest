@@ -49,6 +49,7 @@ model User {
   accounts      Account[]
   news          News[]
   mediaWorks    MediaWork[]
+  events        Event[]
   @@map("user")
 }
 
@@ -179,4 +180,29 @@ model MediaWork {
   @@index([status, publishedAt])
   @@index([authorId])
   @@map("media_work")
+}
+
+/// กิจกรรม / ปฏิทินโรงเรียน — 1 รายการมีช่วงเวลา (startDate → endDate) กับ flag allDay
+/// endDate ว่าง = กิจกรรมวันเดียว · allDay = ทั้งวัน (input เป็น date ไม่มีเวลา)
+/// color = hex สำหรับระบายสีใน FullCalendar (Phase 4.6) — ว่างได้
+model Event {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  startDate   DateTime
+  endDate     DateTime? // ว่าง = วันเดียว · มีค่า = ข้ามวัน (multi-day)
+  allDay      Boolean       @default(false)
+  color       String? // hex เช่น "#3b82f6" สำหรับปฏิทิน
+  coverImage  String? // Cloudinary secure_url
+  status      PublishStatus @default(PUBLISHED)
+  authorId    String?
+  // ลบ user แล้วกิจกรรมต้องไม่หายตามไปด้วย → คืน null (คลายจาก spec ให้ตรงกับ News/MediaWork)
+  author      User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([startDate])
+  @@index([status, startDate])
+  @@map("event")
 }
