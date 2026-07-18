@@ -138,14 +138,32 @@ export function EventForm({ event }: { event?: EventFormValues & { id: string } 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="startDate">วัน{allDay ? "" : "และเวลา"}เริ่ม</Label>
-                {/* type เปลี่ยนตาม allDay — ค่าถูก normalize ใน handleAllDayChange แล้ว */}
-                <Input id="startDate" type={dateInputType} aria-invalid={!!errors.startDate} {...register("startDate")} />
+                {/*
+                  key ผูกกับ allDay → พอ toggle ให้ input remount เป็น element ใหม่พร้อม type + ค่าที่ถูกต้อง
+                  (handleAllDayChange normalize ค่าใน RHF ไว้ก่อนแล้ว → defaultValue หยิบค่านั้นมา)
+                  ถ้าไม่ remount: เปลี่ยน type บน element เดิม เบราว์เซอร์ล้างค่าที่ไม่ตรง type แล้วยิง onChange("") ทับ → วันหาย
+                */}
+                <Input
+                  id="startDate"
+                  key={allDay ? "start-date" : "start-datetime"}
+                  type={dateInputType}
+                  defaultValue={getValues("startDate")}
+                  aria-invalid={!!errors.startDate}
+                  {...register("startDate")}
+                />
                 {errors.startDate && <p className="text-sm text-destructive">{errors.startDate.message}</p>}
               </div>
 
               <div className="flex flex-col gap-2">
                 <Label htmlFor="endDate">วัน{allDay ? "" : "และเวลา"}สิ้นสุด (ไม่บังคับ)</Label>
-                <Input id="endDate" type={dateInputType} aria-invalid={!!errors.endDate} {...register("endDate")} />
+                <Input
+                  id="endDate"
+                  key={allDay ? "end-date" : "end-datetime"}
+                  type={dateInputType}
+                  defaultValue={getValues("endDate")}
+                  aria-invalid={!!errors.endDate}
+                  {...register("endDate")}
+                />
                 <p className="text-xs text-muted-foreground">เว้นว่าง = กิจกรรมวันเดียว</p>
                 {errors.endDate && <p className="text-sm text-destructive">{errors.endDate.message}</p>}
               </div>

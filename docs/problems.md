@@ -218,6 +218,16 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
   เฉพาะหลังกด "อัปโหลด" (ก่อนกดเป็นปุ่มเปล่า ไม่โหลดสคริปต์) แล้ว auto-open พอ `isLoading` เป็น false
 - 🔍 **curl จับไม่ได้** (200 หมด) — เป็น DOM/focus timing → ต้องคลิกจริงถึงเจอ (บทเรียนข้อ 7.1 อีกครั้ง)
 
+### 5.5 🐛 เปลี่ยน `<input type>` บน element เดิม → ค่าที่ไม่ตรง type ถูกล้าง + ยิง `onChange("")`
+
+- **เจอที่:** ฟอร์มกิจกรรม toggle "ทั้งวัน" สลับ `datetime-local` ↔ `date` บน `<input>` ตัวเดิม
+- **อาการ:** วันที่ที่กรอกไว้**หายเกลี้ยง** ต้องกรอกใหม่ — ทั้งที่ handleAllDayChange normalize ค่าไว้แล้ว
+- **สาเหตุ:** พอ `type` เปลี่ยนบน element เดิม ค่าเดิม (`2026-07-20T09:00`) ใช้กับ `type="date"` ไม่ได้
+  → เบราว์เซอร์**ล้างค่าทิ้งแล้วยิง `onChange("")`** ทับค่าที่เพิ่ง setValue ไว้ (เกิดหลัง handler)
+- ✅ **แก้:** ใส่ `key` ผูกกับ allDay ให้ input **remount เป็น element ใหม่** พร้อม `type` + `defaultValue` ที่ถูกต้อง
+  ตั้งแต่แรก → ไม่มีจังหวะที่ค่าไม่ตรง type เลย ([`event-form.tsx`](../components/admin/event-form.tsx))
+- 🔍 curl จับไม่ได้ (เป็น DOM interaction) — ต้องคลิก toggle จริงถึงเจอ
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch

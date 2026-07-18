@@ -256,6 +256,8 @@
   >    `CldUploadWidget` โหลด `all.js` ทันทีที่ mount แล้วฉีด iframe เข้า DOM → แย่ง focus จากช่องที่กำลังพิมพ์
   >    → แก้ที่ `image-upload.tsx` ให้ **lazy mount** widget เฉพาะตอนกด "อัปโหลด" (มีผลกับฟอร์ม news/works ด้วย)
   >    รายละเอียดใน problems.md 5.4 · ⏸️ รอ owner ยืนยัน focus นิ่ง + auto-open ทำงานอีกรอบ
+  > 🐛 **บั๊กที่ 2 (แก้แล้ว) — toggle "ทั้งวัน" แล้ววันที่หาย:** เปลี่ยน `type` บน `<input>` เดิม (datetime-local↔date)
+  >    เบราว์เซอร์ล้างค่าที่ไม่ตรง type + ยิง `onChange("")` ทับ → แก้ด้วย `key` remount input (problems.md 5.5) · ⏸️ รอ owner ยืนยัน
   > 📝 **ปีในตารางแสดงเป็น ค.ศ. 2 หลัก** (`d MMM yy` locale `th` → "1 ส.ค. 26" ไม่ใช่ พ.ศ. 69) — **ตรงกับ news/works ทั้งแอป** (ไม่ใช่บั๊ก)
   >    ถ้าจะเปลี่ยนเป็น พ.ศ. ต้องทำพร้อมกันทั้งเว็บ → ยกไปพิจารณารวมที่ Phase 4.8
   > 🐛 **Windows: dev server EPERM rename `.next/dev/...manifest.js`** (เจอตอน start เซิร์ฟหลัง generate) → หน้าเป็น 500 ทุกอัน
