@@ -208,6 +208,16 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 - กด "แก้ไข" รายการ A → ปิด → กด "แก้ไข" รายการ B → **เห็นค่าของ A ค้าง**
 - **แก้:** `useEffect` reset ค่าทุกครั้งที่ `open` เป็น true ([`taxonomy-dialog.tsx`](../components/admin/taxonomy-dialog.tsx))
 
+### 5.4 🐛 `CldUploadWidget` (next-cloudinary) แย่ง focus ตอนกำลังพิมพ์
+
+- **อาการ:** เข้าฟอร์มที่มี `ImageUpload` → คลิกพิมพ์ในช่องแรก (เช่น ชื่อ) → **รอแป๊บ เคอร์เซอร์หลุดเอง** ต้องพิมพ์ใหม่
+- **สาเหตุ (ยืนยันจาก source `next-cloudinary@6`):** `CldUploadWidget` โหลด `all.js` ทันทีที่ mount แล้ว
+  `onLoad` เรียก `createUploadWidget()` เลย → **ฉีด iframe ของ widget เข้า DOM ทันทีที่สคริปต์โหลดเสร็จ**
+  การแทรก iframe แย่ง focus จาก input ที่กำลังพิมพ์ (ดีเลย์ = เวลาโหลดสคริปต์ = "รอแป๊บ")
+- ✅ **แก้ (เดียวจบทุกฟอร์ม):** [`image-upload.tsx`](../components/admin/image-upload.tsx) — **lazy mount** widget
+  เฉพาะหลังกด "อัปโหลด" (ก่อนกดเป็นปุ่มเปล่า ไม่โหลดสคริปต์) แล้ว auto-open พอ `isLoading` เป็น false
+- 🔍 **curl จับไม่ได้** (200 หมด) — เป็น DOM/focus timing → ต้องคลิกจริงถึงเจอ (บทเรียนข้อ 7.1 อีกครั้ง)
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch
