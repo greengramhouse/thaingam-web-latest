@@ -289,7 +289,17 @@
         · **slug ซ้ำ → `fieldErrors.slug`** (isUniqueError ทำงานกับ Prisma 7 adapter) · **eventDate `2026-08-01` local → เก็บ `2026-07-31T17:00Z`** (ระดับวัน ไม่เพี้ยน)
         · **CRUD รูปครบผ่าน action จริง:** addPhotos 2 ใบ (order 0,1) · movePhoto down → สลับ order ถูก · updatePhotoCaption · deletePhoto · **deleteAlbum → Cascade ลบรูปหมด (orphan photos = 0)** · toggle PUBLISHED→DRAFT · ล้างข้อมูล + temp TEACHER แล้ว
   - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของทดสอบเอง):** สร้างอัลบั้ม→เด้งหน้าแก้ไข, อัปโหลดหลายรูปพร้อมกันขึ้น Cloudinary จริง, แก้ caption, ปุ่มขึ้น/ลงจัดลำดับ, ลบรูป/ลบอัลบั้ม, empty state
-- [ ] **4.4.7 Documents** — ศูนย์ดาวน์โหลด + fileUrl + หมวด
+- [x] **4.4.7 Documents** — ศูนย์ดาวน์โหลด + fileUrl + หมวด ✅
+  - [x] schema: `Document` (status `PublishStatus` default PUBLISHED · `category` free text · `downloadCount` denormalized · `fileType` ว่างได้ เดาตอนแสดงผล) → migrate `add_document` (additive ล้วน)
+  - [x] `lib/document.ts` — `documentFileLabel()`/`extFromUrl()` **เดาชนิดไฟล์จาก URL ตอนแสดงผล ไม่เก็บลง DB** (หลักการเดียวกับรูปปก YouTube · problems.md 8.3) · pure ไม่มี server-only
+  - [x] `lib/validations/document.ts` — object แบน · `fileUrl` บังคับเป็น URL · `published` เป็น boolean (Switch) แล้ว map → `status` ตอนบันทึก
+  - [x] `server/actions/document.ts` — create/update/delete/**toggleDocumentPublish** gate `canManageContent` ทุกตัว (คัดลอกแพตเทิร์น staff/news)
+  - [x] component: `file-upload` (Cloudinary `resourceType:auto` + วาง URL · lazy-mount กัน focus theft · แสดงเป็นชิปไฟล์ไม่ใช่รูป) · `document-form` (หมวดมี datalist แนะนำ) · `document-row-actions` (ตา=publish/unpublish, แก้, ลบ)
+  - [x] หน้า: `/admin/documents` (ค้นหา ชื่อ/รายละเอียด/หมวด + กรองสถานะ + pagination + คอลัมน์ชนิดไฟล์/ดาวน์โหลด) · `/new` · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · ทดสอบ HTTP จริงบน `:4000`):
+        guest→307 `/login` · **SUPER_ADMIN→200** list/new/edit · edit ของที่ไม่มี→404 · empty state ขึ้น
+        · **แทรก 2 แถวจริง (psql):** ตารางแสดง PDF (เดาจาก `.pdf`) + DOCX (แอดมินตั้งเอง) · badge หมวด · downloadCount 5 · **กรอง `status=DRAFT` โชว์เฉพาะร่าง (published ถูกซ่อน — positive+control)** · ล้างข้อมูลทดสอบแล้ว (0 แถว)
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** อัปโหลดไฟล์ขึ้น Cloudinary (raw), ฟอร์มพรีฟิลตอนแก้ไข (RHF เติมค่าฝั่ง client), toggle/ลบผ่านปุ่ม, RBAC ยิง action ตรง (แพตเทิร์นเดียวกับ staff/news ที่พิสูจน์แล้ว)
 - [ ] **4.4.8 Banners** — Hero slider (order, isActive, link)
 - [ ] **4.4.9 Announcements** — แถบประกาศด่วน (active, ช่วงเวลา)
 - [ ] **4.4.10 Pages** — แก้เนื้อหา rich text หน้า DB (ระเบียบ/หลักสูตร/รับสมัคร)

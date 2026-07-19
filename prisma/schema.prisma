@@ -264,3 +264,23 @@ model Photo {
   @@index([albumId, order])
   @@map("photo")
 }
+
+/// ศูนย์ดาวน์โหลดเอกสาร — ไฟล์ (PDF ฯลฯ) เก็บเป็น URL (Cloudinary/Drive) เท่านั้น ไม่มีไฟล์บน server (spec §5)
+/// category = หมวดแบบข้อความอิสระ (ประกาศ/แบบฟอร์ม/หลักสูตร…) · fileType ว่างได้ (เดาจาก fileUrl ตอนแสดงผล)
+/// downloadCount denormalized — แอดมินดูอย่างเดียว (นับตอนกดดาวน์โหลดหน้า public Phase 4.6)
+model Document {
+  id            String        @id @default(cuid())
+  title         String
+  description   String?
+  fileUrl       String
+  fileType      String?
+  category      String?
+  status        PublishStatus @default(PUBLISHED)
+  downloadCount Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status, createdAt])
+  @@index([category])
+  @@map("document")
+}
