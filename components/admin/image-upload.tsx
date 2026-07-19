@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CldUploadWidget, type CloudinaryUploadWidgetResults } from "next-cloudinary";
-import { ImageUp, Loader2, X } from "lucide-react";
+import { ImageOff, ImageUp, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,6 +19,11 @@ export function ImageUpload({
   onChange: (url: string) => void;
   ariaInvalid?: boolean;
 }) {
+  // เก็บ "URL ที่โหลดไม่สำเร็จ" ไม่ใช่ boolean — พอ value เปลี่ยนเป็นลิงก์ใหม่ failed จะ false เอง
+  // ตอน render (ไม่ต้องมี effect reset ที่ทำ cascading render)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const failed = failedUrl === value;
+
   function handleSuccess(result: CloudinaryUploadWidgetResults) {
     const info = result.info;
     if (info && typeof info !== "string") onChange(info.secure_url);
@@ -39,13 +44,25 @@ export function ImageUpload({
 
       {value ? (
         <div className="relative w-fit">
-          {/* ใช้ <img> ไม่ใช่ next/image เพราะ URL มาจากโดเมนไหนก็ได้ที่ผู้ใช้วางเอง */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt="ตัวอย่างรูปปก"
-            className="h-32 w-auto rounded-md border border-border object-cover"
-          />
+          {failed ? (
+            <div className="flex h-32 w-48 flex-col items-center justify-center gap-1 rounded-md border border-dashed border-destructive/50 px-3 text-center">
+              <ImageOff className="size-5 text-destructive" aria-hidden="true" />
+              <p className="text-xs font-medium text-destructive">โหลดรูปไม่สำเร็จ</p>
+              <p className="text-[11px] text-muted-foreground">
+                ลิงก์อาจไม่ใช่รูปสาธารณะ (เช่น Google Drive ที่ยังไม่แชร์) ลองกด “อัปโหลด” แทน
+              </p>
+            </div>
+          ) : (
+            // ใช้ <img> ไม่ใช่ next/image เพราะ URL มาจากโดเมนไหนก็ได้ที่ผู้ใช้วางเอง
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={value}
+              alt="ตัวอย่างรูปปก"
+              className="h-32 w-auto rounded-md border border-border object-cover"
+              onError={() => setFailedUrl(value)}
+              onLoad={() => setFailedUrl(null)}
+            />
+          )}
           <Button
             type="button"
             variant="secondary"
