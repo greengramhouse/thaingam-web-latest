@@ -355,3 +355,7 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
   `--primary: oklch(0.205 0 0)` vs `--foreground: oklch(0.145 0 0)` ต่างกันแค่ความเข้ม
 - ผลคือ **ลิงก์ในเนื้อหาแยกจากข้อความธรรมดาด้วยขีดเส้นใต้อย่างเดียว — ไม่ใช่บั๊ก**
 - สีจริงของแบรนด์โรงเรียนรอ Phase 4.8 · จุดเสียบ typography ของ Tiptap = class `prose-editor` (ยังเป็น class เปล่า)
+- ✅ **อัปเดต 2026-07-19:** สีแบรนด์ + accent เป็น token หมดแล้ว → **อย่า hardcode hex ใน component อีก**
+  - แบรนด์/นิวทรัล: ใช้ `bg-primary` `text-muted-foreground` `bg-card` `border-border` `bg-secondary` ฯลฯ (ดู `app/globals.css` `:root`)
+  - accent เชิงข้อมูล (สถานะ/หมวด/ไอคอนสถิติ): `bg-mint-muted`/`text-mint-foreground`/`bg-mint` · `sky-*` · `warning-*`
+  - Tailwind v4: token ตั้งใน `@theme inline` เป็น `--color-<ชื่อ>` แล้ว utility เกิดเอง (`--color-sky-muted` → `bg-sky-muted`) · ชื่อไม่มีเลขจึงไม่ชนพาเลต `sky-500` ดีฟอลต์ของ Tailwind

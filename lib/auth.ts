@@ -17,13 +17,8 @@ export const auth = betterAuth({
     //   ต้องมี RESEND_API_KEY + EMAIL_FROM แล้วใส่ sendResetPassword({ user, url }) ที่นี่
   },
 
-  // ⏭️ TODO (just-in-time): เพิ่ม Google OAuth เมื่อมี GOOGLE_CLIENT_ID/SECRET
-  // socialProviders: {
-  //   google: {
-  //     clientId: process.env.GOOGLE_CLIENT_ID!,
-  //     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  //   },
-  // },
+  // ❌ ยกเลิก Google OAuth (ตัดสินใจ 2026-07-19 — เจ้าของไม่ต้องการแล้ว)
+  //    เข้าระบบด้วย email/password อย่างเดียว · user ทุกคนสร้างโดย SUPER_ADMIN
 
   plugins: [
     // map role ให้ตรง enum Role ของโปรเจกต์ (ไม่ใช่ default "user"/"admin" ของ Better Auth)

@@ -22,6 +22,16 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  /* accent สถานะเชิงข้อมูล (DESIGN.md §2/§4) — ฟ้า/มิ้นต์/เหลือง สำหรับ badge สถานะ + ไอคอน stat */
+  --color-sky: var(--sky);
+  --color-sky-foreground: var(--sky-foreground);
+  --color-sky-muted: var(--sky-muted);
+  --color-mint: var(--mint);
+  --color-mint-foreground: var(--mint-foreground);
+  --color-mint-muted: var(--mint-muted);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -51,39 +61,52 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* ===== Design tokens โรงเรียนชุมชนวัดไทยงาม (ตาม docs → DESIGN.md) =====
+   สีครามแบรนด์ #333D6D เป็นแกน · neutral อมครามเล็กน้อย (chroma > 0) · hue ~274
+   ค่า oklch ทั้งหมดมาจาก DESIGN.md §2 ตรง ๆ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --background: oklch(0.98 0.004 274); /* #F7F8FB ขาวเย็นนวล */
+  --foreground: oklch(0.245 0.033 274); /* #1C2135 */
+  --card: oklch(1 0 0); /* #FFFFFF */
+  --card-foreground: oklch(0.245 0.033 274);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --popover-foreground: oklch(0.245 0.033 274);
+  --primary: oklch(0.363 0.083 274); /* #333D6D แบรนด์ */
+  --primary-foreground: oklch(1 0 0); /* ขาวบนพื้นคราม */
+  --secondary: oklch(0.955 0.01 274); /* #EEF0F6 brand tint 50 */
+  --secondary-foreground: oklch(0.363 0.083 274); /* คราม */
+  --muted: oklch(0.96 0.005 274); /* #F1F2F7 พื้น input/table header */
+  --muted-foreground: oklch(0.54 0.028 274); /* #6B7189 */
+  --accent: oklch(0.955 0.01 274); /* #EEF0F6 พื้น hover เมนู/chip */
+  --accent-foreground: oklch(0.363 0.083 274); /* คราม */
+  --destructive: oklch(0.585 0.176 25); /* #D64545 (สอดคล้องแดงในตรา) */
+  --border: oklch(0.918 0.007 274); /* #E5E7F0 */
+  --input: oklch(0.918 0.007 274);
+  --ring: oklch(0.363 0.083 274); /* โฟกัส = คราม (ไม่ใช่ ring เทา default) */
+  --chart-1: oklch(0.363 0.083 274); /* คราม */
+  --chart-2: oklch(0.665 0.118 236); /* ฟ้า #2E9BD6 */
+  --chart-3: oklch(0.727 0.113 173); /* มิ้นต์ #2FBFA0 */
+  --chart-4: oklch(0.762 0.114 76); /* เหลือง warning #E2A33B */
+  --chart-5: oklch(0.54 0.028 274); /* muted */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(1 0 0); /* sidebar หลังบ้าน = ขาว */
+  --sidebar-foreground: oklch(0.245 0.033 274);
+  --sidebar-primary: oklch(0.363 0.083 274); /* item active = คราม */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.955 0.01 274); /* #EEF0F6 พื้น active/hover */
+  --sidebar-accent-foreground: oklch(0.363 0.083 274);
+  --sidebar-border: oklch(0.918 0.007 274);
+  --sidebar-ring: oklch(0.363 0.083 274);
+  /* accent เชิงข้อมูล — sky #2E9BD6 · mint #2FBFA0 · warning #E2A33B (+ ตัวอักษรเข้ม/พื้นอ่อน) */
+  --sky: oklch(0.665 0.118 236); /* #2E9BD6 */
+  --sky-foreground: oklch(0.52 0.1 236); /* #1E6E9E ตัวอักษรบนพื้นอ่อน */
+  --sky-muted: oklch(0.955 0.024 236); /* #E4F2FA */
+  --mint: oklch(0.727 0.113 173); /* #2FBFA0 */
+  --mint-foreground: oklch(0.56 0.09 168); /* #1F8E76 */
+  --mint-muted: oklch(0.96 0.028 173); /* #E2F6F1 */
+  --warning: oklch(0.762 0.114 76); /* #E2A33B */
+  --warning-foreground: oklch(0.52 0.1 76); /* #9A6A15 */
+  --warning-muted: oklch(0.96 0.03 90); /* #FBF0DD */
 }
 
 .dark {
@@ -118,6 +141,16 @@ body {
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* accent เชิงข้อมูล (dark) — สีนำสว่างเท่าเดิม พื้นอ่อนกลายเป็นเข้ม ตัวอักษรสว่างขึ้น */
+  --sky: oklch(0.665 0.118 236);
+  --sky-foreground: oklch(0.78 0.1 236);
+  --sky-muted: oklch(0.3 0.05 236);
+  --mint: oklch(0.727 0.113 173);
+  --mint-foreground: oklch(0.8 0.1 168);
+  --mint-muted: oklch(0.3 0.05 173);
+  --warning: oklch(0.762 0.114 76);
+  --warning-foreground: oklch(0.82 0.1 76);
+  --warning-muted: oklch(0.32 0.05 76);
 }
 
 @layer base {

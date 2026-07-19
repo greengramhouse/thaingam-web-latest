@@ -12,8 +12,7 @@
 เตรียมให้พร้อมก่อน Phase 4.2 (Auth) เป็นต้นไป:
 
 - [x] **PostgreSQL** — มี `DATABASE_URL` (PostgreSQL 16 ผ่าน Docker, port 5436)
-- [ ] **Google OAuth** — สร้าง OAuth Client แล้วได้ `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`
-      (Authorized redirect URI: `http://localhost:4000/api/auth/callback/google` — **4000 ไม่ใช่ 3000**)
+- [x] ~~**Google OAuth**~~ — **ยกเลิก (2026-07-19)** เจ้าของไม่ต้องการ · ใช้ email/password อย่างเดียว
 - [ ] **Email provider** (reset password) — เช่น Resend → `RESEND_API_KEY` + email ผู้ส่ง
 - [x] **Cloudinary** — ตั้งค่าใน `.env` แล้ว (2026-07-17) · ใช้ **signed upload** ผ่าน `/api/sign-cloudinary-params`
       ⚠️ ต้องมี **`NEXT_PUBLIC_CLOUDINARY_API_KEY`** ด้วย (CldUploadWidget อ่านฝั่ง client) — `API_SECRET` ห้ามเป็น `NEXT_PUBLIC_` เด็ดขาด
@@ -84,7 +83,7 @@
 
 **เป้าหมาย:** login/logout ได้ + กัน route หลังบ้าน
 **⚠️ Next.js 16:** `middleware.ts` ถูกเปลี่ยนชื่อเป็น **`proxy.ts`** (ฟังก์ชัน `proxy`, default Node.js runtime) — docs แนะนำให้ proxy ทำแค่ optimistic check ส่วน authorization จริงเช็คซ้ำใน layout/Server Action
-**ลำดับปรับใหม่:** ทำ email/password core ก่อน → Google OAuth + reset email เลื่อนไปทำตอนมี credentials (just-in-time)
+**ลำดับปรับใหม่:** ทำ email/password core ก่อน → reset email เลื่อนไปทำตอนมี credentials (just-in-time) · **Google OAuth ยกเลิกแล้ว (2026-07-19)**
 
 **A. Core (email/password) — เสร็จแล้ว**
 - [x] `BETTER_AUTH_SECRET` (สุ่ม) ใน `.env`
@@ -109,9 +108,9 @@
       *(ตัดสินใจ 2026-07-16: ครูไม่โพสต์เนื้อหาเอง → ไม่ต้องมีทางสมัคร)*
 
 **D. เลื่อนไปทำตอนมี credentials (just-in-time)**
-- [ ] Google OAuth — เปิด `socialProviders.google` ใน `lib/auth.ts` เมื่อมี `GOOGLE_CLIENT_ID/SECRET`
+- [x] ~~Google OAuth~~ — **ยกเลิก (2026-07-19)** เจ้าของไม่ต้องการ · ถอด TODO `socialProviders.google` ออกจาก `lib/auth.ts` + คีย์ `GOOGLE_*` ออกจาก `.env.example` แล้ว
 - [ ] Reset password (Resend) — เพิ่ม `sendResetPassword` + หน้า `(auth)/forgot-password`, `(auth)/reset-password` เมื่อมี `RESEND_API_KEY`
-- [ ] ✅ verify (เพิ่มเติม): Google OAuth login, reset password ส่งอีเมล
+- [ ] ✅ verify (เพิ่มเติม): reset password ส่งอีเมล
 
 ---
 
@@ -363,10 +362,18 @@
 - [ ] Empty states ทุก list
 - [ ] ตรวจ responsive ทั้งเว็บ (mobile/tablet/desktop)
 - [ ] A11y: alt, focus, contrast, keyboard, aria
-- [ ] **ธีมสี/ดีไซน์จริง** — เลือกสีแบรนด์โรงเรียน + ปรับ tokens (ที่พักไว้ตอนต้น)
-  > ตอนนี้ base color = `neutral` → **ทุก token chroma = 0 (เทาล้วน ไม่มีสี)** เช่น `--primary: oklch(0.205 0 0)` vs `--foreground: oklch(0.145 0 0)`
-  > ผลคือ **ลิงก์ในเนื้อหาแยกจากข้อความธรรมดาด้วยขีดเส้นใต้อย่างเดียว** (ยืนยันตอนคลิกจริง 2026-07-17 — ไม่ใช่บั๊ก) → พอใส่สีแบรนด์แล้วลิงก์จะเด่นเอง
+- [x] **ธีมสี/ดีไซน์จริง (global tokens)** — ✅ **ลงแล้ว 2026-07-19 (เลื่อนมาทำก่อนกำหนด)** map สีแบรนด์จาก `DESIGN.md §2` เข้า `:root` ใน `app/globals.css` ครบทุก token (primary=คราม `#333D6D`, neutral อมคราม hue 274, ring=คราม, sidebar active=คราม, chart=แบรนด์+ฟ้า/มิ้นต์/เหลือง)
+  > เดิม base color = `neutral` (chroma 0 เทาล้วน) → ตอนนี้เป็นสีแบรนด์แล้ว · **มีผลทั้งเว็บทันที รวมหน้า admin** → ⚠️ ต้องคลิกทดสอบหน้า admin ทุกหน้าว่าไม่มีสีเพี้ยน (ยังไม่ได้ทำ)
+  > Lightning CSS (Turbopack) downlevel `oklch` → hex fallback ตอน serve (`--primary: #313969` ≈ `#333D6D`) — ปกติ ไม่ใช่บั๊ก
+  > ⏭️ ยังเหลือ: (1) เปลี่ยนหน้า auth จากสีฝัง hex → token (โค้ดสะอาดขึ้น ไม่เปลี่ยนหน้าตา) · (2) ฟอนต์ global `Inter/Anuphan` (ตอนนี้ auth ใช้แล้ว แต่ admin ยัง Noto)
   > จุดเสียบ typography ของ Tiptap: class **`prose-editor`** ใน `components/admin/rich-text-editor.tsx` — ตอนนี้ยังไม่ได้นิยามที่ไหน (class เปล่า รอใส่ style ที่นี่)
+- [x] **Accent token (sky/mint/warning) เป็นตัวแปรกลาง** — ✅ **ลงแล้ว 2026-07-19** เพิ่ม `--sky/--mint/--warning` (+ `-foreground` + `-muted`) ใน `:root` + `.dark` และ map ใน `@theme inline` ของ `app/globals.css` → ใช้เป็น utility ได้ทันที (`bg-mint-muted`, `text-sky-foreground`, `bg-warning`, ฯลฯ)
+  > **หลักการ:** สถานะ/หมวด/ไอคอนสถิติต่อจากนี้ **ใช้ token เหล่านี้ ไม่ hardcode hex** · `StatusBadge` ยกมาใช้ token แล้ว (มิ้นต์=เผยแพร่, เหลือง=ร่าง แบบ dot+tint ตาม DESIGN.md §4) → มีผลกับ list ข่าว/ผลงาน/กิจกรรม/อัลบั้มทั้งหมด (คลิกทดสอบ badge ให้ครบ)
+- [x] **หน้าแดชบอร์ดหลังบ้าน redesign ตาม mockup `Admin Dashboard.dc.html`** — ✅ **ลงแล้ว 2026-07-19** (import จาก Claude Design project ผ่าน design MCP)
+  > `app/admin/page.tsx` เขียนใหม่: หัวเรื่องทักทาย + CTA "เพิ่มข่าวใหม่" · การ์ดสถิติ 4 ใบ (ไอคอนไทล์สี) นับจาก **News/MediaWork/User จริง** · badge "เดือนนี้" = `createdAt >= startOfMonth` (ไม่ใส่เลข trend ปลอมแบบ mockup ตามบทเรียน 8.3) · ตารางข่าวล่าสุด 5 รายการ · ทางลัด 4 ปุ่ม (ลิงก์หน้าที่ ready จริง) · ผู้ใช้งานล่าสุด (avatar สีตาม role)
+  > `admin-shell.tsx` + `sidebar-nav.tsx`: Brand โลโก้ไทล์ (ไอคอน `School` เหมือน auth — ยังไม่มีไฟล์โลโก้ใน `public/`) · เมนู active = แถบครามซ้าย 3px + พื้นครามอ่อน · overline หัวกลุ่ม · topbar 60px + ปุ่ม "ดูเว็บไซต์" outline
+  > ⚠️ **ตั้งใจต่างจาก mockup:** ไม่ใส่ badge เลข "3" ที่เมนูข้อความติดต่อ (ยังไม่มี `ContactMessage` — Phase 4.4.12 ค่อยนับจริง)
+  > ✅ verify: tsc + eslint ผ่าน · รัน dev จริง → guest `/admin`=307, login seed=200, `/admin`(auth)=**200** เรนเดอร์ครบทุก section · utility สีใหม่ถูก generate ลง CSS จริง · **ยังไม่ได้คลิกจริง (เจ้าของทดสอบ)**
 - [ ] Performance: `next/image`, lazy YouTube, cache/revalidate ที่เหมาะสม
   > **📌 แผน cache (คุยกัน 2026-07-17) — เป้าหมายจริงคือลดภาระ DB + bandwidth Cloudinary ไม่ใช่ "ค่า API"**
   > *(ตรวจแล้ว: ไม่มี API ภายนอกที่คิดเงินต่อ call — Cloudinary free tier 25 credits/เดือน คือตัวที่ต้องระวังสุด)*
@@ -406,10 +413,6 @@ DATABASE_URL="postgresql://user:pass@host:5432/thaingam"
 # Better Auth
 BETTER_AUTH_SECRET="<random-32-chars+>"
 BETTER_AUTH_URL="http://localhost:4000"   # ต้องตรงกับ port ที่รันจริง ไม่งั้น 403 INVALID_ORIGIN
-
-# Google OAuth
-GOOGLE_CLIENT_ID=""
-GOOGLE_CLIENT_SECRET=""
 
 # Email (Resend)
 RESEND_API_KEY=""

@@ -49,7 +49,7 @@
 
 **Authentication (Better Auth):**
 - Email/Password (จัดการเอง) + reset/change password ผ่านอีเมล
-- Google OAuth (Gmail)
+- ~~Google OAuth (Gmail)~~ — **ยกเลิก (2026-07-19)** เจ้าของไม่ต้องการ · ใช้ email/password อย่างเดียว
 - **ไม่มีหน้าสมัครสมาชิก (register)** — `emailAndPassword.disableSignUp: true` ปิด endpoint `/api/auth/sign-up/email`
   **SUPER_ADMIN เป็นผู้สร้าง user และกำหนดสิทธิ์** ผ่านหน้า `/admin/users` (Phase 4.4.13)
 - Publishing workflow: `DRAFT` / `PUBLISHED` — เป็น "ร่าง / เผยแพร่" ของ ADMIN เอง (ไม่ใช่ flow ส่งตรวจข้ามคนแล้ว)
@@ -475,7 +475,7 @@ Thaingam-web/
 |---|---|---|
 | 1 | **Scaffold** | `pnpm create next-app` (TS, App Router, Tailwind v4), init shadcn/ui, ติดตั้ง deps พื้นฐาน *(Tiptap เลื่อนไป step 4, FullCalendar เลื่อนไป step 6)* |
 | 2 | **DB** | วาง `schema.prisma`, ตั้ง `DATABASE_URL`, `prisma migrate dev`, `lib/prisma.ts` |
-| 3 | **Auth** | Better Auth config (Email/Password core ก่อน; reset email + Google OAuth เลื่อนตอนมี creds), role, `proxy.ts` *(เดิม middleware.ts)*, seed SUPER_ADMIN |
+| 3 | **Auth** | Better Auth config (Email/Password; reset email เลื่อนตอนมี creds — Google OAuth ยกเลิกแล้ว), role, `proxy.ts` *(เดิม middleware.ts)*, seed SUPER_ADMIN |
 | 4 | **Admin shell** | layout (Sidebar/Topbar ตาม role), Dashboard, RBAC helper, RichTextEditor, ImageUrlInput, DataTable |
 | 5 | **Admin CRUD** | News → Categories/Tags → MediaWork → Events → Staff → Albums/Photos → Documents → Banners → Announcements → Pages → SiteSettings → Messages → Users *(ADMIN+ จัดการเนื้อหาทั้งหมด, Users เฉพาะ SUPER_ADMIN)* |
 | 6 | **Public site** | Navbar/Footer, หน้าแรก, news, works (+YouTube), calendar, albums (+like), documents, staff, admission/pages, about, contact (form + Map) |
@@ -492,14 +492,13 @@ Thaingam-web/
 - YouTube embed เล่นได้ / ปฏิทินแสดง event (multi-day + สี)
 - กดไลก์อัลบั้มได้ (กันซ้ำ) / ดาวน์โหลดเอกสาร (count เพิ่ม) / ค้นหาเจอ
 - `/sitemap.xml` + `/robots.txt` ตอบถูกต้อง
-- reset password ส่งอีเมลได้ / Google OAuth login ได้ / `proxy.ts` กัน non-admin ออกจาก `/admin`
+- reset password ส่งอีเมลได้ / `proxy.ts` กัน non-admin ออกจาก `/admin`
 
 ---
 
 ## 10. สิ่งที่ผู้ใช้ต้องเตรียม (Prerequisites)
 
 - **PostgreSQL** (`DATABASE_URL`) — local หรือ Neon/Supabase
-- **Google OAuth** client (Client ID / Secret)
 - **SMTP/Email provider** สำหรับ reset password — เช่น Resend
 - **Cloudinary** account (cloud name / API key) หรือวิธีทำลิงก์ตรงจาก Google Drive
 
