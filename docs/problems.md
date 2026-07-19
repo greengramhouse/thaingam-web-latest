@@ -228,6 +228,16 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
   ตั้งแต่แรก → ไม่มีจังหวะที่ค่าไม่ตรง type เลย ([`event-form.tsx`](../components/admin/event-form.tsx))
 - 🔍 curl จับไม่ได้ (เป็น DOM interaction) — ต้องคลิก toggle จริงถึงเจอ
 
+### 5.6 🐛 ลิงก์ Google Drive (`lh3.googleusercontent.com/d/<id>`) วางเป็นรูปแล้วไม่ขึ้น
+
+- **อาการ (เจอ 4.4.5):** วางลิงก์ Drive ในช่องรูปของ `ImageUpload` → preview ว่าง/รูปแตก เงียบ ๆ ไม่บอกอะไร
+- **สาเหตุ:** ไฟล์ที่ **ยังไม่แชร์สาธารณะ** → ลิงก์เด้ง `302` หลายทอดไปจบที่ **หน้า login ของ Google** (`accounts.google.com/signin`)
+  ตอบกลับเป็น `text/html` ไม่ใช่ byte รูป → `<img>` โหลดไม่ได้ (ตรวจด้วย `curl -IL` เห็น redirect chain + `content_type=text/html`)
+- ⚠️ ต่อให้แชร์ "Anyone with the link" แล้ว Drive ก็ **rate-limit + เปลี่ยนรูปแบบลิงก์บ่อย** — hotlink ไม่เสถียรสำหรับ production
+- ✅ **ทางหลักคือปุ่ม "อัปโหลด" (Cloudinary signed upload)** — Drive เป็นแค่ fallback · วาง URL ตรงควรเป็น image host ที่คืน `image/*` ให้ anonymous
+- ✅ **เพิ่ม feedback แล้ว:** `<img onError>` ใน [`image-upload.tsx`](../components/admin/image-upload.tsx) โชว์กล่อง "โหลดรูปไม่สำเร็จ..." แทนที่จะเงียบ
+  (เก็บ **URL ที่ fail** ไม่ใช่ boolean → พอวางลิงก์ใหม่ reset เองตอน render · เลี่ยง `setState` ใน effect ที่ lint `react-hooks/set-state-in-effect` จับ)
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch

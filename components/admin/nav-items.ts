@@ -56,7 +56,7 @@ export const navGroups: NavGroup[] = [
   {
     title: "สื่อและไฟล์",
     items: [
-      { href: "/admin/albums", label: "อัลบั้มภาพ", icon: Images, ready: false, phase: "4.4.6" },
+      { href: "/admin/albums", label: "อัลบั้มภาพ", icon: Images, ready: true },
       { href: "/admin/documents", label: "เอกสารดาวน์โหลด", icon: Folder, ready: false, phase: "4.4.7" },
       { href: "/admin/banners", label: "แบนเนอร์หน้าแรก", icon: GalleryHorizontal, ready: false, phase: "4.4.8" },
       { href: "/admin/announcements", label: "ประกาศด่วน", icon: Megaphone, ready: false, phase: "4.4.9" },
@@ -65,7 +65,7 @@ export const navGroups: NavGroup[] = [
   {
     title: "หน้าเว็บ",
     items: [
-      { href: "/admin/staff", label: "ทำเนียบบุคลากร", icon: UsersRound, ready: false, phase: "4.4.5" },
+      { href: "/admin/staff", label: "ทำเนียบบุคลากร", icon: UsersRound, ready: true },
       { href: "/admin/pages", label: "หน้าเนื้อหา", icon: FileText, ready: false, phase: "4.4.10" },
     ],
   },

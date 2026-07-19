@@ -50,6 +50,7 @@ model User {
   news          News[]
   mediaWorks    MediaWork[]
   events        Event[]
+  albums        Album[]
   @@map("user")
 }
 
@@ -205,4 +206,61 @@ model Event {
   @@index([startDate])
   @@index([status, startDate])
   @@map("event")
+}
+
+/// ทำเนียบบุคลากร — เรียงตาม order (น้อย→มาก) แล้วชื่อ · isActive=false = ซ่อนจากหน้าเว็บแต่ยังเก็บไว้
+/// ไม่มี publish/slug/tags/author — เป็นข้อมูลคงที่ ไม่ใช่คอนเทนต์ที่มีวันเผยแพร่
+model Staff {
+  id         String   @id @default(cuid())
+  name       String
+  position   String // ตำแหน่ง เช่น ผู้อำนวยการ, ครูชำนาญการ
+  department String? // กลุ่มสาระ/ฝ่าย
+  photo      String? // Cloudinary secure_url
+  email      String?
+  phone      String?
+  bio        String? // ประวัติ/รายละเอียดสั้น ๆ (ข้อความธรรมดา)
+  order      Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([order])
+  @@map("staff")
+}
+
+/// อัลบั้มภาพกิจกรรม — มีหลายรูป (Photo) · likeCount denormalized (ปุ่มไลก์สาธารณะ Phase 4.6)
+/// eventDate = วันที่จัดกิจกรรม (ระดับวัน ไม่มีเวลา) · slug ตั้งเอง (อังกฤษ+เลข เหมือน News)
+model Album {
+  id          String        @id @default(cuid())
+  title       String
+  slug        String        @unique
+  description String?
+  coverImage  String? // Cloudinary secure_url — ถ้าว่างหน้า public หยิบรูปแรกในอัลบั้มมาแสดง
+  eventDate   DateTime? // วันที่จัดกิจกรรม (เก็บเที่ยงคืนท้องถิ่นเหมือน event allDay)
+  status      PublishStatus @default(PUBLISHED)
+  likeCount   Int           @default(0) // denormalized — อัปเดตตอนกดไลก์ (Phase 4.6) · แอดมินดูอย่างเดียว
+  photos      Photo[]
+  // AlbumLike[] จะเติมกลับตอน Phase 4.6 (ปุ่มไลก์ + fingerprint กันซ้ำ)
+  authorId    String?
+  // ลบ user แล้วอัลบั้มต้องไม่หาย → คืน null (ตรงกับ News/MediaWork/Event)
+  author      User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, eventDate])
+  @@index([authorId])
+  @@map("album")
+}
+
+/// รูปในอัลบั้ม — ลบอัลบั้มแล้วรูปหายตาม (Cascade) · order = ลำดับแสดง (สลับด้วยปุ่มขึ้น/ลง)
+model Photo {
+  id      String  @id @default(cuid())
+  albumId String
+  album   Album   @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  url     String // Cloudinary secure_url (หรือ URL รูปที่วางเอง)
+  caption String?
+  order   Int     @default(0)
+
+  @@index([albumId, order])
+  @@map("photo")
 }

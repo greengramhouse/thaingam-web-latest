@@ -261,8 +261,35 @@
   >    ถ้าจะเปลี่ยนเป็น พ.ศ. ต้องทำพร้อมกันทั้งเว็บ → ยกไปพิจารณารวมที่ Phase 4.8
   > 🐛 **Windows: dev server EPERM rename `.next/dev/...manifest.js`** (เจอตอน start เซิร์ฟหลัง generate) → หน้าเป็น 500 ทุกอัน
   >    แก้: kill process พอร์ต 4000 + `rm -rf .next` แล้ว `pnpm dev` ใหม่ → หายสนิท (ดู problems.md 2.4)
-- [ ] **4.4.5 Staff** — ทำเนียบบุคลากร + รูป + order (drag/หมายเลข) + isActive
-- [ ] **4.4.6 Albums & Photos** — album + upload หลายรูป + จัดลำดับ + ดู likeCount
+- [x] **4.4.5 Staff** — ทำเนียบบุคลากร + รูป + order (หมายเลข) + isActive ✅
+  - [x] schema: `Staff` (+ `@@index([order])`, `@@map("staff")`) → migrate `add_staff`
+        *(ไม่มี publish/slug/tags/author — เป็นข้อมูลคงที่ · `isActive` = แสดง/ซ่อนหน้าเว็บ แทน DRAFT/PUBLISHED)*
+  - [x] `lib/validations/staff.ts` (Zod) — object แบน · `order` เก็บเป็น **string** จาก `<input number>` (regex `^\d+$`) แล้ว coerce เป็น number ตอนบันทึกใน action *(เหตุผลเดียวกับวันที่ใน event — RHF คุม string ง่ายกว่า, เลี่ยง `z.coerce` ที่ทำ input type เป็น `unknown`)*
+  - [x] `server/actions/staff.ts` — create/update/delete/**toggleStaffActive** gate ด้วย `canManageContent` ทุกตัว (บทบาท toggle = แสดง/ซ่อน)
+  - [x] component: `staff-form` (2 คอลัมน์: ข้อมูล + การแสดงผล/รูป · Switch แสดงบนเว็บ · ช่องลำดับ) · `staff-row-actions` (ตา=ซ่อน/แสดง, แก้ไข, ลบ)
+  - [x] หน้า: `/admin/staff` (ค้นหา ชื่อ/ตำแหน่ง/ฝ่าย + กรองแสดง/ซ่อน + pagination + รูปวงกลม + คอลัมน์ลำดับ · เรียง `order asc, name asc`) · `/new` (แนะนำลำดับถัดไป max+1) · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน, ทดสอบ HTTP จริงบน `:4000`):
+        guest→307 `/login` (list+new) · **SUPER_ADMIN→200** list/new/edit · **TEACHER→307 `/`**
+        · 🔒 **ยิง action ตรง** (`Next-Action` id จาก manifest): TEACHER (มี session ผ่าน proxy) เรียก `createStaff` → `ไม่มีสิทธิ์ทำรายการนี้` ไม่มีอะไรเข้า DB
+        **positive control:** action id + payload เดียวกันเป๊ะ + SUPER_ADMIN → `ok:true` สร้างได้จริง ⇒ พิสูจน์ว่าที่บล็อกคือ RBAC ไม่ใช่ payload ผิดรูป
+        · **CRUD ครบผ่าน action จริง:** create (order `"5"`→`5`, isActive `true`, department set ถูก) · list render row · edit=200 · **toggle: isActive true→false** · delete: ลบ row จริง (count→0) + เรียก toggle บน row ที่ลบแล้ว → `ไม่พบบุคลากรนี้` (กัน not-found ถูก) · ล้างข้อมูลทดสอบ + temp TEACHER แล้ว
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของทดสอบเอง):** เพิ่ม/แก้/ลบ ผ่านฟอร์ม, อัปโหลดรูป, toggle แสดง/ซ่อนจากปุ่มตา, ช่องลำดับ, empty state
+  > 🐛 **แถม (เจ้าของเจอตอนทดสอบ):** วางลิงก์ Google Drive แล้วรูปไม่ขึ้น — ไม่ใช่บั๊กโค้ด (ลิงก์เด้งไปหน้า login Google, คืน HTML ไม่ใช่รูป)
+  >    → เพิ่ม `onError` ใน `image-upload.tsx` โชว์กล่อง "โหลดรูปไม่สำเร็จ..." แทนที่จะเงียบ (มีผลทุกฟอร์ม news/works/events/staff) · ดู problems.md 5.6
+- [x] **4.4.6 Albums & Photos** — album + upload หลายรูป + จัดลำดับ + ดู likeCount ✅
+  - [x] schema: `Album` + `Photo` (+ `User.albums`) → migrate `add_album_photo`
+        *(Album: slug ตั้งเอง, `eventDate` ระดับวัน, `status`, `likeCount` denormalized (แอดมินดูอย่างเดียว), `authorId?`+SetNull · Photo: `onDelete: Cascade`, `order`, `@@index([albumId, order])`)*
+        > ⏭️ **`AlbumLike` เลื่อนไป Phase 4.6** (ปุ่มไลก์สาธารณะ + fingerprint) — `Album.likes` relation จะเติมกลับตอนนั้น · ตอนนี้เก็บแค่ field `likeCount`
+  - [x] `lib/validations/album.ts` — `albumFormSchema` (reuse `slugSchema`) · `photoCaptionSchema` · `eventDate` เป็น string แล้วแปลงด้วย `parseEventDateInput(_, true)` (reuse จาก `lib/event.ts` — วันไม่เพี้ยนข้าม timezone)
+  - [x] `server/actions/album.ts` — **album:** create/update/delete/toggleAlbumPublish (slug ซ้ำ → `isUniqueError`) · **photo:** `addPhotos` (เพิ่มหลายใบ order ต่อท้าย), `updatePhotoCaption`, `deletePhoto`, `movePhoto` (swap order กับใบข้างเคียงใน transaction) — gate ด้วย `canManageContent` ทุกตัว
+  - [x] component: `album-form` (สร้างเสร็จ→เด้งหน้าแก้ไขเพื่อเพิ่มรูป เพราะ Photo ต้องมี albumId ก่อน) · `album-row-actions` · **`album-photos-manager`** (multi-upload Cloudinary lazy-mount + flush ตอน `onQueuesEnd` · caption inline (blur) · ปุ่มขึ้น/ลง · ลบ+ยืนยัน)
+  - [x] หน้า: `/admin/albums` (ค้นหา + กรองสถานะ + pagination + รูปปก (fallback รูปแรก) + จำนวนรูป + likeCount + วันจัด) · `/new` · `/[id]/edit` (ฟอร์ม + ตัวจัดการรูป) → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน, ทดสอบ HTTP จริงบน `:4000`):
+        guest→307 `/login` · **SUPER_ADMIN→200** list/new/edit · **TEACHER→307 `/` + ยิง `createAlbum`/`addPhotos` ตรงถูกปฏิเสธ (`ไม่มีสิทธิ์`) ไม่มีอะไรเข้า DB**
+        *(positive control: action id + payload เดียวกันเป๊ะ + SUPER_ADMIN → `ok:true`)*
+        · **slug ซ้ำ → `fieldErrors.slug`** (isUniqueError ทำงานกับ Prisma 7 adapter) · **eventDate `2026-08-01` local → เก็บ `2026-07-31T17:00Z`** (ระดับวัน ไม่เพี้ยน)
+        · **CRUD รูปครบผ่าน action จริง:** addPhotos 2 ใบ (order 0,1) · movePhoto down → สลับ order ถูก · updatePhotoCaption · deletePhoto · **deleteAlbum → Cascade ลบรูปหมด (orphan photos = 0)** · toggle PUBLISHED→DRAFT · ล้างข้อมูล + temp TEACHER แล้ว
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของทดสอบเอง):** สร้างอัลบั้ม→เด้งหน้าแก้ไข, อัปโหลดหลายรูปพร้อมกันขึ้น Cloudinary จริง, แก้ caption, ปุ่มขึ้น/ลงจัดลำดับ, ลบรูป/ลบอัลบั้ม, empty state
 - [ ] **4.4.7 Documents** — ศูนย์ดาวน์โหลด + fileUrl + หมวด
 - [ ] **4.4.8 Banners** — Hero slider (order, isActive, link)
 - [ ] **4.4.9 Announcements** — แถบประกาศด่วน (active, ช่วงเวลา)
