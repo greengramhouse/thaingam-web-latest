@@ -284,3 +284,19 @@ model Document {
   @@index([category])
   @@map("document")
 }
+
+/// แบนเนอร์ Hero หน้าแรก — เรียงตาม order (น้อย→มาก) · isActive=false = ซ่อนจากสไลด์แต่ยังเก็บไว้
+/// image เก็บ URL (Cloudinary/Drive) · title/linkUrl ไม่บังคับ (บางแบนเนอร์เป็นภาพล้วนไม่มีลิงก์)
+model Banner {
+  id        String   @id @default(cuid())
+  title     String?
+  image     String
+  linkUrl   String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([order, isActive])
+  @@map("banner")
+}

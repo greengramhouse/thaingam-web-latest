@@ -300,7 +300,15 @@
         guest→307 `/login` · **SUPER_ADMIN→200** list/new/edit · edit ของที่ไม่มี→404 · empty state ขึ้น
         · **แทรก 2 แถวจริง (psql):** ตารางแสดง PDF (เดาจาก `.pdf`) + DOCX (แอดมินตั้งเอง) · badge หมวด · downloadCount 5 · **กรอง `status=DRAFT` โชว์เฉพาะร่าง (published ถูกซ่อน — positive+control)** · ล้างข้อมูลทดสอบแล้ว (0 แถว)
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** อัปโหลดไฟล์ขึ้น Cloudinary (raw), ฟอร์มพรีฟิลตอนแก้ไข (RHF เติมค่าฝั่ง client), toggle/ลบผ่านปุ่ม, RBAC ยิง action ตรง (แพตเทิร์นเดียวกับ staff/news ที่พิสูจน์แล้ว)
-- [ ] **4.4.8 Banners** — Hero slider (order, isActive, link)
+- [x] **4.4.8 Banners** — Hero slider (order, isActive, link) ✅
+  - [x] schema: `Banner` (image บังคับ · title/linkUrl ไม่บังคับ · `@@index([order, isActive])`) → migrate `add_banner` (additive)
+  - [x] `lib/validations/banner.ts` — object แบน · image เป็น URL บังคับ · order string→number (เหมือน staff) · `.or(z.literal(""))` กับช่องไม่บังคับ
+  - [x] `server/actions/banner.ts` — create/update/delete/**toggleBannerActive** gate `canManageContent` · revalidate `/admin/banners` + `/` (Hero หน้าแรก)
+  - [x] component: `banner-form` (ImageUpload + title/linkUrl ไม่บังคับ + Switch แสดงบนหน้าแรก + ลำดับ) · `banner-row-actions` (ตา=แสดง/ซ่อน, แก้, ลบ)
+  - [x] หน้า: `/admin/banners` (ค้นหาชื่อ + กรองแสดง/ซ่อน + pagination + thumbnail + คอลัมน์ลิงก์ · เรียง order asc) · `/new` (แนะนำลำดับ max+1) · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`): guest→307 · SUPER_ADMIN→200 list/new · empty state
+        · **แทรก 2 แถวจริง (psql):** ตารางโชว์ thumbnail + แบนเนอร์มีชื่อ/ไม่มีชื่อ (“ภาพไม่มีชื่อ”) + badge แสดง/ซ่อน · **กรอง `active=0` โชว์เฉพาะที่ซ่อน (แสดงอยู่ถูกซ่อน — positive+control)** · ล้างข้อมูลแล้ว
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** อัปโหลดรูป, ฟอร์มพรีฟิลตอนแก้ไข, toggle/ลบผ่านปุ่ม, RBAC ยิง action ตรง (แพตเทิร์นเดียวกับ staff ที่พิสูจน์แล้ว)
 - [ ] **4.4.9 Announcements** — แถบประกาศด่วน (active, ช่วงเวลา)
 - [ ] **4.4.10 Pages** — แก้เนื้อหา rich text หน้า DB (ระเบียบ/หลักสูตร/รับสมัคร)
 - [ ] **4.4.11 SiteSettings** — ฟอร์ม key-value (ติดต่อ/social/map)
