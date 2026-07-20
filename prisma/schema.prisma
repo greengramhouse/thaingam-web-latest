@@ -300,3 +300,20 @@ model Banner {
   @@index([order, isActive])
   @@map("banner")
 }
+
+/// แถบประกาศด่วนบนสุดของหน้าแรก — ข้อความสั้น ๆ + ลิงก์ (ไม่บังคับ)
+/// isActive=false = ปิดถาวร · startsAt/endsAt = ช่วงเวลาแสดงอัตโนมัติ (ว่าง = ไม่จำกัดฝั่งนั้น)
+/// หน้า public (Phase 4.5) แสดงเมื่อ isActive && อยู่ในช่วงเวลา
+model Announcement {
+  id        String    @id @default(cuid())
+  message   String
+  linkUrl   String?
+  isActive  Boolean   @default(true)
+  startsAt  DateTime? // ว่าง = แสดงทันที
+  endsAt    DateTime? // ว่าง = ไม่มีกำหนดหมดอายุ
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([isActive, startsAt, endsAt])
+  @@map("announcement")
+}

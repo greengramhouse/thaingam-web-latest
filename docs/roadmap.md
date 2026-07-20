@@ -309,7 +309,21 @@
   - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`): guest→307 · SUPER_ADMIN→200 list/new · empty state
         · **แทรก 2 แถวจริง (psql):** ตารางโชว์ thumbnail + แบนเนอร์มีชื่อ/ไม่มีชื่อ (“ภาพไม่มีชื่อ”) + badge แสดง/ซ่อน · **กรอง `active=0` โชว์เฉพาะที่ซ่อน (แสดงอยู่ถูกซ่อน — positive+control)** · ล้างข้อมูลแล้ว
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** อัปโหลดรูป, ฟอร์มพรีฟิลตอนแก้ไข, toggle/ลบผ่านปุ่ม, RBAC ยิง action ตรง (แพตเทิร์นเดียวกับ staff ที่พิสูจน์แล้ว)
-- [ ] **4.4.9 Announcements** — แถบประกาศด่วน (active, ช่วงเวลา)
+- [x] **4.4.9 Announcements** — แถบประกาศด่วน (active, ช่วงเวลา startsAt/endsAt) ✅
+  - [x] schema: `Announcement` (message บังคับ · linkUrl/startsAt/endsAt ไม่บังคับ · `isActive` · `@@index([isActive, startsAt, endsAt])` · เพิ่ม `updatedAt` จาก spec เพื่อความสม่ำเสมอ) → migrate `add_announcement` (additive ล้วน)
+  - [x] `lib/announcement.ts` — `announcementLiveState()` (hidden/scheduled/live/expired เทียบเวลาปัจจุบัน) · `formatAnnouncementWindow()` (ช่วงเวลาไทย) · pure ไม่มี server-only
+  - [x] `lib/validations/announcement.ts` — object แบน · วันที่เป็น string จาก `<input datetime-local>` (reuse `parseEventDateInput` จาก lib/event) · `superRefine`: endsAt ≥ startsAt
+  - [x] `server/actions/announcement.ts` — create/update/delete/**toggleAnnouncementActive** gate `canManageContent` ทุกตัว · revalidate `/admin/announcements` + `/` (แถบหน้าแรก Phase 4.5) · string→Date ตอนบันทึก
+  - [x] component: `announcement-form` (Textarea ข้อความ + linkUrl + 2×datetime-local ช่วงเวลา + Switch เปิด/ปิด) · `announcement-row-actions` (ตา=เปิด/ปิด, แก้, ลบ)
+  - [x] หน้า: `/admin/announcements` (ค้นหาข้อความ + กรองเปิด/ปิด + pagination + **คอลัมน์สถานะคำนวณตามช่วงเวลา** กำลังแสดง/รอถึงเวลา/หมดเวลา/ปิดอยู่) · `/new` · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`): guest→307 `/login` (list+new) · **SUPER_ADMIN→200** list/new · edit ที่ไม่มี→404 · empty state ขึ้น
+        · **แทรก 4 แถวจริง (psql):** สถานะคำนวณถูกครบ 4 แบบ (live ไม่จำกัดเวลา / scheduled อนาคต / expired อดีต / hidden ปิด) · `formatAnnouncementWindow` โชว์ช่วงเวลา · **กรอง active=1 ซ่อนแถวปิด · active=0 โชว์เฉพาะแถวปิด (positive+control ด้วยข้อความ row ที่ unique เลี่ยงชนป้ายปุ่ม)** · ล้างข้อมูลแล้ว (0 แถว)
+        · 🔒 **ยิง `createAnnouncement` ตรง** (Next-Action id จาก manifest): **TEACHER → `ไม่มีสิทธิ์ทำรายการนี้` (message token ASCII `NEGCTRL-…` → 0 แถวใน DB)** · **positive control: SUPER_ADMIN + request เหมือนกันเป๊ะ (token ASCII `POSCTRL-…` → 1 แถวใน DB)** ⇒ พิสูจน์ว่าที่บล็อกคือ RBAC ไม่ใช่ payload ผิดรูป · ล้าง temp TEACHER แล้ว
+  > 🐛 **กับดักที่เสียเวลา ~15 นาที — Thai `LIKE` ผ่าน `docker exec -i psql` คืน 0 ทั้งที่มีแถวจริง** (client_encoding เพี้ยนผ่าน tty)
+  >    ตอนแรกยืนยัน positive control ด้วย `LIKE 'ยิงตรงจาก%'` ได้ 0 เลยหลงคิดว่า action ไม่เข้า DB — ที่จริง**เข้าแล้ว** (เจอเป็นแถวค้างตอนเก็บกวาด)
+  >    → **verify ด้วย token ASCII เสมอ** (`POSCTRL-…`/`NEGCTRL-…`) ไม่งั้นแยก "0 จริง" กับ "0 เพราะ encoding" ไม่ออก · ลบข้อมูลไทยให้ลบด้วย `id` (ASCII)
+  >    *(หมายเหตุ: `Content-Type: application/json` ยิง action เข้า DB ได้ปกติ — ตรงกับ problems.md 7.2 · ไม่ใช่สาเหตุของ 0 แถว)*
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** เพิ่ม/แก้/ลบผ่านฟอร์ม, ฟอร์มพรีฟิลตอนแก้ไข (RHF เติมค่า datetime ฝั่ง client — curl มองไม่เห็น), toggle เปิด/ปิดผ่านปุ่มตา, toast
 - [ ] **4.4.10 Pages** — แก้เนื้อหา rich text หน้า DB (ระเบียบ/หลักสูตร/รับสมัคร)
 - [ ] **4.4.11 SiteSettings** — ฟอร์ม key-value (ติดต่อ/social/map)
 - [ ] **4.4.12 ContactMessages** — inbox, mark read, ลบ

@@ -319,6 +319,17 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
 - เช่น `CldUploadWidget` ต้องมี **`NEXT_PUBLIC_CLOUDINARY_API_KEY`** ฝั่ง client ด้วย
   (`CLOUDINARY_API_SECRET` **ห้าม** เป็น `NEXT_PUBLIC_` เด็ดขาด — ใช้เซ็นที่ `/api/sign-cloudinary-params` เท่านั้น)
 
+### 7.5 🇹🇭 ยืนยันผลด้วย query ที่มีภาษาไทย: `LIKE 'ไทย%'` ผ่าน `docker exec -i psql` คืน 0 ทั้งที่มีแถว
+
+- เจอใน 4.4.9: ยิง Server Action สร้างประกาศ (message ภาษาไทย) แล้วเช็คด้วย
+  `psql -tAc "SELECT count(*) ... WHERE message LIKE 'ยิงตรงจาก%'"` → ได้ **0** เลยหลงคิดว่า action ไม่เข้า DB
+  ที่จริง**เข้าแล้ว** (เจอเป็นแถวค้างตอนเก็บกวาด) — client_encoding ของ session ที่ยิงผ่าน `docker exec -i … <<'SQL'` / `-c "…ไทย…"` เพี้ยน
+  ทำให้ literal ไทยไม่ตรงกับ bytes ที่เก็บ (UTF-8) → LIKE ไม่ match
+- นี่คือ **7.3 ซ้ำในรูปแบบใหม่**: "0" อาจแปลว่า "ไม่มีจริง" หรือ "query เอง match ไม่ได้" — แยกไม่ออกถ้าไม่มี control
+- **กติกา:** ให้ test data ใช้ **token ASCII** (`POSCTRL-…` / `NEGCTRL-…`) เป็นตัวชี้วัด — LIKE/`=` ตรงเสมอ ไม่ผ่านชั้น encoding
+  · ลบข้อมูลไทยให้ลบด้วย `id` (ASCII) ไม่ใช่ `WHERE message LIKE 'ไทย%'`
+  · *(content-type ของการยิง action ไม่เกี่ยว — `application/json` เข้า DB ได้ปกติ ตาม 7.2)*
+
 ---
 
 ## 8. 📋 บทเรียนเรื่องแผน/กระบวนการ
