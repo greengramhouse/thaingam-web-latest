@@ -405,7 +405,9 @@
 - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริง `:4000` + **screenshot desktop 1440 + mobile 390**):
       หน้าแรก 200 · **แสดงข้อมูลจริงจาก DB ครบทุก section** (banner ภาพจริงใน hero, ข่าว featured+เล็ก, ผลงานมี play, กิจกรรม 2 รายการ, footer ดึง contact/social ที่เจ้าของกรอก) · empty section ซ่อนเอง
       · **responsive:** desktop 3 คอลัมน์/nav แนวนอน · mobile คอลัมน์เดียว + hamburger drawer + quick links 2×2 · stats card ย้ายลงล่างบนจอเล็ก
-  - [ ] ⏸️ **รอเจ้าของยืนยันสายตา + วางไฟล์ `public/logo.png`** · ปุ่มค้นหา → `/search` (Phase 4.7) · ลิงก์หน้า feature (/news, /works…) → 404 จนกว่าจะทำ Phase 4.6
+  - [x] เจ้าของวาง `public/logo.png` แล้ว (2026-07-20) → SchoolLogo หยิบไปใช้อัตโนมัติ · ทดสอบคลิกจริงแล้ว ใช้ได้
+  - [ ] 🐛 **TODO responsive (เจ้าของเจอบนมือถือ 2026-07-20):** ข้อความ **แถบประกาศด้านบน** + **คำขวัญโรงเรียน (hero badge)** ถูกตัด (`truncate`) บนจอเล็ก → ควรให้ wrap/ย่อขนาดแทนตัดทิ้ง (แถบประกาศอาจเป็น marquee หรือ 2 บรรทัด · badge คำขวัญยาวให้ wrap) — ไว้แก้รอบหน้า
+  - [ ] ⏸️ ปุ่มค้นหา → `/search` (Phase 4.7) · ลิงก์หน้า feature (/news, /works…) → 404 จนกว่าจะทำ Phase 4.6
 
 ---
 
