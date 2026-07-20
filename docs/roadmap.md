@@ -339,7 +339,21 @@
   > 🐛 **EPERM `.next` manifest ซ้ำ (problems.md 2.4) — ต้องรอ handle ปล่อยก่อน restart:** หลัง regenerate client แล้ว `rm -rf .next` + `pnpm dev` ทันที
   >    dev ตัวเก่ายังถือ handle `.next/dev/server/*manifest.js` ค้าง → ตัวใหม่ rename ไม่ได้ 500 ทุกหน้า → **kill process บน 4000 → `sleep 3` (รอปล่อย handle) → `rm -rf .next` → `pnpm dev`** ถึงหาย
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** สร้าง/แก้/ลบผ่านฟอร์ม, Tiptap ในหน้า, ฟอร์มพรีฟิลตอนแก้ไข, toggle เผยแพร่/ร่างผ่านปุ่มตา, toast
-- [ ] **4.4.11 SiteSettings** — ฟอร์ม key-value (ติดต่อ/social/map)
+- [x] **4.4.11 SiteSettings** *(เฉพาะ SUPER_ADMIN)* — ฟอร์ม key-value (ทั่วไป/ติดต่อ/social/map) ✅
+  - [x] schema: `SiteSetting` (key unique · value · `@@map("site_setting")`) → migrate `add_site_setting` (additive)
+  - [x] `lib/rbac.ts` — เพิ่ม `canManageSettings()` (SUPER_ADMIN เท่านั้น — เข้มกว่า content ที่ ADMIN ทำได้)
+  - [x] `lib/site-settings.ts` — **แหล่งความจริงเดียวของชุดคีย์** (SETTING_GROUPS: `site.*`/`contact.*`/`social.*`/`map.*` + label/input type/placeholder)
+        · **`fieldName()` แปลง `.`→`__`** เพราะ react-hook-form ตีชื่อ field ที่มี `.` เป็น nested path (กับดักที่กันไว้ล่วงหน้า)
+  - [x] `lib/validations/site-settings.ts` — **สร้าง zod schema แบบ dynamic จากนิยาม** · ช่อง url ต้องเป็น URL (เว้นว่างได้) · ที่เหลือจำกัดความยาว
+  - [x] `server/actions/site-settings.ts` — `updateSiteSettings` upsert ทั้งชุดใน transaction · **ค่าว่าง = ลบคีย์ทิ้ง** (ไม่เก็บ row ว่าง → Footer เช็ค "มีค่าไหม" ง่าย) · gate `canManageSettings` · วนตามนิยาม ไม่เชื่อคีย์แปลกจาก client
+  - [x] component: `site-settings-form` (กลุ่มเป็น Card · Input/Textarea ตาม input type · RHF ใช้ชื่อ field `__`) · หน้า `/admin/settings` (`requireRole("SUPER_ADMIN")`) โหลดค่าปัจจุบันมาพรีฟิล → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`): guest→307 · **SUPER_ADMIN→200** (4 กลุ่ม + label + field mapping `contact__phone` ครบ)
+        · 🔒 **ADMIN ถูกกันทั้ง 2 ชั้น: หน้า→307 `/` + ยิง `updateSiteSettings` ตรง→`ไม่มีสิทธิ์ทำรายการนี้` ไม่มีอะไรเข้า DB** *(โมดูลนี้ ADMIN ก็เข้าไม่ได้ ต่างจาก content)*
+        · **positive control: SUPER_ADMIN request เดียวกัน→บันทึกได้** ⇒ บล็อกด้วย RBAC ไม่ใช่ payload
+        · **logic บันทึก (ค่า ASCII):** upsert 3 คีย์ที่มีค่า · **social.facebook ว่าง → ไม่ถูกเก็บ** (rows=3) · **save ซ้ำด้วย site.name ว่าง → ลบ row นั้น** (rows=1, contact.phone คงอยู่) · **url ผิด→`ลิงก์ไม่ถูกต้อง`** · ล้าง test data + temp ADMIN แล้ว
+  > 📝 **RHF + dotted key:** ชื่อ field ที่มี `.` (เช่น `contact.phone`) RHF จะสร้าง nested object ให้ → เลี่ยงด้วยชื่อ field `contact__phone` แล้ว map กลับเป็น dotted key ตอนบันทึก
+  > 📝 **zod schema แบบ index-signature:** `flatten().fieldErrors` มี type `string[] | undefined` (ต่างจาก schema คีย์คงที่) → cast เป็น `Record<string,string[]>` ให้ตรง `ActionResult` (ฟอร์มเช็ค `?.[0]` อยู่แล้ว)
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** กรอก/บันทึกผ่านฟอร์ม, พรีฟิลค่าเดิมตอนเปิดหน้า, toast, url ผิดขึ้น error ตรงช่อง
 - [ ] **4.4.12 ContactMessages** — inbox, mark read, ลบ
 - [ ] **4.4.13 Users** *(เฉพาะ SUPER_ADMIN)* — สร้าง user, กำหนด role, ban/unban, reset
       *(ทางเดียวที่จะมี user ใหม่ เพราะปิดสมัครเองแล้ว → ใช้ `authClient.admin.createUser`)*

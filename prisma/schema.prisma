@@ -337,3 +337,14 @@ model Page {
   @@index([status])
   @@map("page")
 }
+
+/// ตั้งค่าเว็บไซต์แบบ key-value — ชุดคีย์คงที่นิยามที่ lib/site-settings.ts (contact.* / social.* / map.* / site.*)
+/// Footer + หน้า contact (Phase 4.5/4.6) อ่านค่าเหล่านี้ · แก้ได้เฉพาะ SUPER_ADMIN
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("site_setting")
+}

@@ -56,3 +56,8 @@ export function canPublish(role?: string | null) {
 export function canManageUsers(role?: string | null) {
   return role === "SUPER_ADMIN";
 }
+
+/** เฉพาะ SUPER_ADMIN แก้ตั้งค่าเว็บไซต์ได้ (ติดต่อ/social/แผนที่) */
+export function canManageSettings(role?: string | null) {
+  return role === "SUPER_ADMIN";
+}
