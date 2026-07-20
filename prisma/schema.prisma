@@ -348,3 +348,19 @@ model SiteSetting {
 
   @@map("site_setting")
 }
+
+/// กล่องข้อความติดต่อ — ข้อความจากฟอร์ม "ติดต่อเรา" หน้า public (Phase 4.6, unauthenticated)
+/// แอดมินอ่าน/ทำเครื่องหมายอ่านแล้ว/ลบ · ไม่มีการแก้ไขเนื้อหา (เป็นข้อความที่ผู้ส่งกรอกมา)
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String?
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([isRead, createdAt])
+  @@map("contact_message")
+}

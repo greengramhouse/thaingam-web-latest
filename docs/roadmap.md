@@ -354,7 +354,17 @@
   > 📝 **RHF + dotted key:** ชื่อ field ที่มี `.` (เช่น `contact.phone`) RHF จะสร้าง nested object ให้ → เลี่ยงด้วยชื่อ field `contact__phone` แล้ว map กลับเป็น dotted key ตอนบันทึก
   > 📝 **zod schema แบบ index-signature:** `flatten().fieldErrors` มี type `string[] | undefined` (ต่างจาก schema คีย์คงที่) → cast เป็น `Record<string,string[]>` ให้ตรง `ActionResult` (ฟอร์มเช็ค `?.[0]` อยู่แล้ว)
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** กรอก/บันทึกผ่านฟอร์ม, พรีฟิลค่าเดิมตอนเปิดหน้า, toast, url ผิดขึ้น error ตรงช่อง
-- [ ] **4.4.12 ContactMessages** — inbox, mark read, ลบ
+- [x] **4.4.12 ContactMessages** — inbox, mark read, ลบ ✅
+  - [x] schema: `ContactMessage` (name/email บังคับ · phone/subject ว่างได้ · isRead · `@@index([isRead, createdAt])`) → migrate `add_contact_message` (additive)
+        > ⏭️ **ฝั่ง submit (public contact form + action) เลื่อนไป Phase 4.6** พร้อมหน้า "ติดต่อเรา" — 4.4.12 ทำเฉพาะ inbox แอดมิน · เทสต์ด้วย insert ผ่าน psql (แพตเทิร์นเดียวกับ banners/documents)
+  - [x] `server/actions/contact-message.ts` — `setMessageRead(id, read)` + `deleteContactMessage(id)` gate `canManageContent` (ADMIN+ เหมือน content · nav ไม่ใช่ superAdminOnly) · setMessageRead ข้าม DB write ถ้าสถานะไม่เปลี่ยน (auto-mark ซ้ำไม่ยิง DB)
+  - [x] component: `message-row-actions` (เปิดอ่าน/สลับอ่าน-ยังไม่อ่าน/ลบ) · `message-detail-actions` (สลับ+ลบ→เด้งกลับ inbox) · **`auto-mark-read`** (mark อ่านแล้วใน `useEffect` ตอนเปิดจริง — **จงใจไม่ mark ตอน render** เพราะ Next prefetch `<Link>` จะ mark ก่อนเวลา)
+  - [x] หน้า: `/admin/messages` (ค้นหา ชื่อ/อีเมล/หัวข้อ/ข้อความ + กรองอ่าน/ยังไม่อ่าน + pagination + **ตัวนับ unread ใน header** + เรียงยังไม่อ่านก่อน) · `/admin/messages/[id]` (รายละเอียดเต็ม + ปุ่มตอบกลับ `mailto:` + tel:) → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`): guest→307 · **SUPER_ADMIN→200** list/detail · detail bad id→404
+        · **แทรก 3 ข้อความ (psql, token ASCII):** header ขึ้น "ยังไม่ได้อ่าน 2 รายการ" · badge ใหม่/อ่านแล้ว · **กรอง read=0 ซ่อนที่อ่านแล้ว · read=1 ซ่อนที่ยังไม่อ่าน (positive+control) · ค้นหา q=bob เจอเฉพาะ bob** · detail แสดง body/email/phone/subject/mailto ครบ
+        · 🔒 **ยิง action ตรง:** TEACHER `setMessageRead`→`ไม่มีสิทธิ์` (isRead คง f) · **positive control SUPER_ADMIN→isRead=t** · TEACHER `deleteContactMessage`→`ไม่มีสิทธิ์` (ข้อความยังอยู่) ⇒ บล็อกด้วย RBAC · ล้าง test data + temp TEACHER แล้ว
+  > 🐛 **กับดักที่กันไว้: mark-read ต้องอยู่ใน useEffect ไม่ใช่ตอน render** — Next prefetch `<Link>` หน้ารายละเอียดตอน hover → ถ้า mark อ่านแล้วใน server render จะกลายเป็นอ่านทั้งที่แค่เอาเมาส์ชี้ (ยังไม่เปิด)
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** auto-mark-read ตอนเปิดหน้าจริง (client useEffect — curl รัน JS ไม่ได้), ปุ่มสลับ/ลบ, ตอบกลับ mailto, toast
 - [ ] **4.4.13 Users** *(เฉพาะ SUPER_ADMIN)* — สร้าง user, กำหนด role, ban/unban, reset
       *(ทางเดียวที่จะมี user ใหม่ เพราะปิดสมัครเองแล้ว → ใช้ `authClient.admin.createUser`)*
 - [ ] ✅ verify: ADMIN สร้าง DRAFT → กด publish → ขึ้นหน้า public; TEACHER เข้าเมนูเนื้อหาไม่ได้
