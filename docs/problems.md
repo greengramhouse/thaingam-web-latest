@@ -115,14 +115,18 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 - อาการ: เพิ่งสั่ง `pnpm dev` แล้ว**ทุก** route เป็น **500** · log ขึ้นซ้ำ ๆ
   `Error: EPERM: operation not permitted, rename '...\.next\dev\server\...-manifest.js.tmp.xxx' -> '...-manifest.js'`
 - สาเหตุ (Windows): มี process เก่าค้าง lock ไฟล์ใน `.next` หรือ AV เข้าจับ → Turbopack เขียน manifest ทับไม่ได้
-- ✅ **แก้:** kill ตัวที่ค้างพอร์ต 4000 → ลบ `.next` ทิ้ง → `pnpm dev` ใหม่
+- ✅ **แก้:** kill ตัวที่ค้างพอร์ต 4000 → **`sleep 3` รอ OS ปล่อย file handle** → ลบ `.next` ทิ้ง → `pnpm dev` ใหม่
   ```powershell
   Get-NetTCPConnection -LocalPort 4000 -State Listen | Select -Expand OwningProcess -Unique | ForEach { Stop-Process -Id $_ -Force }
   ```
   ```bash
-  rm -rf .next && pnpm dev
+  sleep 3 && rm -rf .next && pnpm dev
   ```
-- ℹ️ อย่าเพิ่งไล่หาบั๊กในโค้ดที่เพิ่งเขียน — 500 แบบนี้เป็น build cache ไม่ใช่ตรรกะ (เจอ 4.4.4)
+- ⚠️ **เจอซ้ำใน 4.4.10 — จังหวะสำคัญ:** ถ้า `rm -rf .next` + start ตัวใหม่ **ทันที**หลัง kill (ยังไม่ทัน sleep)
+  dev ตัวเก่ายังถือ handle `.next/dev/server/*manifest.js` ค้าง → ตัวใหม่ rename ทับไม่ได้ → EPERM ซ้ำ 500 ทุกหน้าเหมือนเดิม
+  → **kill แล้วรอ handle ปล่อยก่อนเสมอ** (`sleep 3`) ค่อยลบ+start · ยืนยันว่าหายด้วย `grep -c EPERM` ใน log = 0 ก่อนไป verify
+- 🔁 **มักเจอหลัง `prisma generate`** (regenerate client → ต้อง restart dev อยู่แล้ว → เข้าลูป kill/rm/start นี้พอดี)
+- ℹ️ อย่าเพิ่งไล่หาบั๊กในโค้ดที่เพิ่งเขียน — 500 แบบนี้เป็น build cache ไม่ใช่ตรรกะ (เจอ 4.4.4, 4.4.10)
 
 ### 2.3 Database dev
 

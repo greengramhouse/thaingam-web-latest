@@ -51,6 +51,7 @@ model User {
   mediaWorks    MediaWork[]
   events        Event[]
   albums        Album[]
+  pages         Page[]
   @@map("user")
 }
 
@@ -316,4 +317,23 @@ model Announcement {
 
   @@index([isActive, startsAt, endsAt])
   @@map("announcement")
+}
+
+/// หน้าเนื้อหาคงที่ที่แก้ผ่านแอดมิน (ระเบียบ/หลักสูตร/การรับสมัคร/เกี่ยวกับเรา…)
+/// slug ตั้งเอง (อังกฤษ+เลข) → หน้า public render ที่ /[slug] (Phase 4.6) · admission อ่าน slug 'admission'
+/// ไม่มี tags/cover/featured — เป็นเนื้อหาหน้าเดียว rich text (เหมือน News แต่ตัดทิ้งเยอะ)
+model Page {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  title     String
+  content   String // rich text (HTML จาก Tiptap)
+  status    PublishStatus @default(PUBLISHED)
+  authorId  String?
+  // ลบ user แล้วหน้าต้องไม่หาย → คืน null (ตรงกับ News/MediaWork/Event/Album)
+  author    User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status])
+  @@map("page")
 }

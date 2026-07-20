@@ -73,7 +73,7 @@
 - [~] เขียน `prisma/seed.ts` (incremental):
   - [x] SUPER_ADMIN คนแรก — สร้างผ่าน Better Auth internal API (`auth.$context`: hash scrypt + `internalAdapter`) เลี่ยง `nextCookies`; creds จาก `SEED_ADMIN_*` ใน `.env`
   - [x] **Category เริ่มต้น 5 หมวด** (upsert — รันซ้ำได้ ไม่ทับชื่อที่แอดมินแก้เอง) → เพิ่มตอน Phase 4.4.1
-  - [ ] SiteSetting / Page เริ่มต้น → เพิ่มตอน content models นั้นถูกสร้าง (just-in-time, Phase 4.4.10+)
+  - [~] SiteSetting / Page เริ่มต้น → **Page seed แล้ว** (3 หน้า `admission`/`regulations`/`curriculum`, DRAFT, Phase 4.4.10) · **SiteSetting** ยังรอ Phase 4.4.11
 - [x] ตั้ง seed ใน **`prisma.config.ts`** (`migrations.seed = "tsx prisma/seed.ts"`) — Prisma 7 ไม่ใช้ `prisma.seed` ใน `package.json` แล้ว → `pnpm prisma db seed` รันได้
 - [ ] ✅ verify: `pnpm prisma studio` เห็นตาราง + SUPER_ADMIN *(login endpoint ทดสอบผ่านแล้วใน 4.2)*
 
@@ -324,7 +324,21 @@
   >    → **verify ด้วย token ASCII เสมอ** (`POSCTRL-…`/`NEGCTRL-…`) ไม่งั้นแยก "0 จริง" กับ "0 เพราะ encoding" ไม่ออก · ลบข้อมูลไทยให้ลบด้วย `id` (ASCII)
   >    *(หมายเหตุ: `Content-Type: application/json` ยิง action เข้า DB ได้ปกติ — ตรงกับ problems.md 7.2 · ไม่ใช่สาเหตุของ 0 แถว)*
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** เพิ่ม/แก้/ลบผ่านฟอร์ม, ฟอร์มพรีฟิลตอนแก้ไข (RHF เติมค่า datetime ฝั่ง client — curl มองไม่เห็น), toggle เปิด/ปิดผ่านปุ่มตา, toast
-- [ ] **4.4.10 Pages** — แก้เนื้อหา rich text หน้า DB (ระเบียบ/หลักสูตร/รับสมัคร)
+- [x] **4.4.10 Pages** — แก้เนื้อหา rich text หน้า DB (ระเบียบ/หลักสูตร/รับสมัคร) ✅
+  - [x] schema: `Page` (slug ตั้งเอง unique · title · content rich text · status · `authorId?`+SetNull · `@@index([status])`) + คืน `User.pages` relation → migrate `add_page` (additive)
+        *(spec §4 มี `author User?` ไม่ระบุ onDelete → คลายเป็น SetNull ให้ตรงกับ News/MediaWork/Event/Album)*
+  - [x] `prisma/seed.ts` — **หน้าตั้งต้น 3 หน้า** (`admission`/`regulations`/`curriculum`) upsert idempotent เป็น **DRAFT + placeholder** ให้แอดมินเข้าไปแก้ · slug ตรงกับ route หน้า public (Phase 4.6: `/admission` + `/[slug]`) → ติ๊กหนี้ seed Page ใน 4.1
+  - [x] `lib/validations/page.ts` — reuse `slugSchema` · content เช็คไม่ใช่แท็กเปล่า (เหมือน News) · ไม่มี cover/category/tags/featured
+  - [x] `server/actions/page.ts` — create/update/delete/**togglePagePublish** gate `canManageContent` ทุกตัว · slug ซ้ำ → `isUniqueSlugError` · revalidate `/admin/pages` + `/[slug]`
+  - [x] component: `page-form` (title + slug + RichTextEditor + สถานะ) · `page-row-actions` (ตา=เผยแพร่/ร่าง, แก้, ลบ)
+  - [x] หน้า: `/admin/pages` (ค้นหาชื่อ + กรองสถานะ + pagination + StatusBadge + เรียง `updatedAt desc`) · `/new` · `/[id]/edit` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · seed 3 หน้าสำเร็จ · HTTP จริงบน `:4000`): guest→307 (list+new) · **SUPER_ADMIN→200** list/new · edit หน้า seed จริง→200 · edit ที่ไม่มี→404
+        · **3 หน้า seed ขึ้นในตารางครบ** (admission/regulations/curriculum เป็น DRAFT)
+        · 🔒 **ยิง `createPage` ตรง** (token ASCII): **TEACHER→`ไม่มีสิทธิ์ทำรายการนี้` 0 แถว** · **positive control SUPER_ADMIN request เดียวกัน→1 แถว** ⇒ บล็อกด้วย RBAC
+        · **slug ซ้ำ `admission`→`slug นี้ถูกใช้แล้ว` (fieldErrors.slug) ไม่มี dup เข้า DB** (isUniqueSlugError กับ Prisma 7 adapter) · ล้าง test data + temp TEACHER แล้ว (เหลือ 3 หน้า seed)
+  > 🐛 **EPERM `.next` manifest ซ้ำ (problems.md 2.4) — ต้องรอ handle ปล่อยก่อน restart:** หลัง regenerate client แล้ว `rm -rf .next` + `pnpm dev` ทันที
+  >    dev ตัวเก่ายังถือ handle `.next/dev/server/*manifest.js` ค้าง → ตัวใหม่ rename ไม่ได้ 500 ทุกหน้า → **kill process บน 4000 → `sleep 3` (รอปล่อย handle) → `rm -rf .next` → `pnpm dev`** ถึงหาย
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** สร้าง/แก้/ลบผ่านฟอร์ม, Tiptap ในหน้า, ฟอร์มพรีฟิลตอนแก้ไข, toggle เผยแพร่/ร่างผ่านปุ่มตา, toast
 - [ ] **4.4.11 SiteSettings** — ฟอร์ม key-value (ติดต่อ/social/map)
 - [ ] **4.4.12 ContactMessages** — inbox, mark read, ลบ
 - [ ] **4.4.13 Users** *(เฉพาะ SUPER_ADMIN)* — สร้าง user, กำหนด role, ban/unban, reset

@@ -66,7 +66,7 @@ export const navGroups: NavGroup[] = [
     title: "หน้าเว็บ",
     items: [
       { href: "/admin/staff", label: "ทำเนียบบุคลากร", icon: UsersRound, ready: true },
-      { href: "/admin/pages", label: "หน้าเนื้อหา", icon: FileText, ready: false, phase: "4.4.10" },
+      { href: "/admin/pages", label: "หน้าเนื้อหา", icon: FileText, ready: true },
     ],
   },
   {

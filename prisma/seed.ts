@@ -56,10 +56,36 @@ async function seedCategories() {
   console.log(`✅ หมวดหมู่ข่าวตั้งต้น: ${categories.length} รายการ`);
 }
 
+// หน้าเนื้อหาตั้งต้น — สร้างเป็น DRAFT + เนื้อหา placeholder ให้แอดมินเข้าไปแก้ (Phase 4.4.10)
+// slug ตรงกับ route หน้า public (Phase 4.6): /admission อ่าน 'admission' · ที่เหลือที่ /[slug]
+const pages = [
+  { slug: "admission", title: "การรับสมัครนักเรียน" },
+  { slug: "regulations", title: "ระเบียบโรงเรียน" },
+  { slug: "curriculum", title: "หลักสูตร" },
+];
+
+async function seedPages() {
+  // upsert — รันซ้ำได้ ไม่ทับเนื้อหา/สถานะที่แอดมินแก้ไปแล้ว (update: {})
+  for (const page of pages) {
+    await prisma.page.upsert({
+      where: { slug: page.slug },
+      update: {},
+      create: {
+        slug: page.slug,
+        title: page.title,
+        content: `<p>ยังไม่มีเนื้อหา — แก้ไขได้ที่เมนู “หน้าเนื้อหา” ในระบบหลังบ้าน</p>`,
+        status: "DRAFT",
+      },
+    });
+  }
+  console.log(`✅ หน้าเนื้อหาตั้งต้น: ${pages.length} รายการ (DRAFT)`);
+}
+
 async function main() {
   await seedSuperAdmin();
   await seedCategories();
-  // ⏭️ content seed ที่เหลือ (SiteSetting / Page) เพิ่มตอนโมเดลนั้นถูกสร้าง (just-in-time)
+  await seedPages();
+  // ⏭️ content seed ที่เหลือ (SiteSetting) เพิ่มตอนโมเดลนั้นถูกสร้าง (just-in-time)
 }
 
 main()
