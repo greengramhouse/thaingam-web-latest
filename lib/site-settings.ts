@@ -29,8 +29,20 @@ export const SETTING_GROUPS: SettingGroup[] = [
   {
     title: "ข้อมูลทั่วไป",
     settings: [
-      { key: "site.name", label: "ชื่อโรงเรียน", input: "text", placeholder: "โรงเรียนถ้ำงามวิทยา" },
-      { key: "site.tagline", label: "คำโปรย / คำขวัญ", input: "text", placeholder: "เรียนดี มีวินัย ใฝ่คุณธรรม" },
+      { key: "site.name", label: "ชื่อโรงเรียน", input: "text", placeholder: "โรงเรียนชุมชนวัดไทยงาม" },
+      { key: "site.nameEn", label: "ชื่อภาษาอังกฤษ (ใต้โลโก้)", input: "text", placeholder: "THAINGAM COMMUNITY SCHOOL" },
+      { key: "site.tagline", label: "คำขวัญสั้น (ใน Hero)", input: "text", placeholder: "ดี · เก่ง · มีสุข" },
+    ],
+  },
+  {
+    title: "หน้าแรก (Hero)",
+    description: "หัวเรื่องและตัวเลขสถิติในแบนเนอร์หน้าแรก — เว้นว่างได้ (จะใช้ค่าปริยาย/ซ่อน)",
+    settings: [
+      { key: "home.heroTitle", label: "หัวเรื่องใหญ่", input: "textarea", placeholder: "มุ่งพัฒนาผู้เรียน สู่ความเป็นเลิศ อย่างมีความสุข" },
+      { key: "home.heroSubtitle", label: "คำโปรยใต้หัวเรื่อง", input: "textarea", placeholder: "โรงเรียนชุมชนวัดไทยงาม จัดการศึกษาที่มีคุณภาพ ควบคู่คุณธรรม…" },
+      { key: "home.statStudents", label: "จำนวนนักเรียน (การ์ดสถิติ)", input: "text", placeholder: "620+" },
+      { key: "home.statTeachers", label: "จำนวนคุณครู", input: "text", placeholder: "38" },
+      { key: "home.statFounded", label: "ปีก่อตั้ง / จำนวนปี", input: "text", placeholder: "60" },
     ],
   },
   {

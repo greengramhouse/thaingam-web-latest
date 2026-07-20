@@ -387,17 +387,25 @@
 
 **เป้าหมาย:** โครงหน้าเว็บสาธารณะ + หน้าแรกสมบูรณ์
 
-- [ ] `app/(public)/layout.tsx` — Navbar + Footer + AnnouncementBar
-- [ ] `components/public/Navbar.tsx` — โลโก้ + เมนู + `navigation-menu` + mobile drawer (`sheet`) + ปุ่มค้นหา (`command`)
-- [ ] `components/public/Footer.tsx` — ข้อมูลจาก SiteSetting + แผนที่ + social
-- [ ] `components/public/AnnouncementBar.tsx` — ประกาศด่วน (active + ช่วงเวลา)
-- [ ] **หน้าแรก** `app/(public)/page.tsx` — ตาม Page Design Playbook:
-  - [ ] Hero Slider (Banner)
-  - [ ] ข่าวเด่น (featured) + ข่าวล่าสุด
-  - [ ] ผลงาน/สื่อการสอนเด่น
-  - [ ] กิจกรรมเร็ว ๆ นี้ (จาก Event)
-  - [ ] CTA รับสมัคร
-- [ ] ✅ verify: หน้าแรกแสดงข้อมูลจริงจาก DB ครบทุก section + responsive
+> 🎨 **ดีไซน์จากเจ้าของ (design MCP):** โปรเจกต์ "วัดไทยงาม เว็บไซต์โรงเรียน" (`Homepage.dc.html` + `DESIGN.md`) — implement ตาม mockup
+> · DESIGN.md ตรงกับ tokens ใน `globals.css` อยู่แล้ว (คราม #333D6D + accent sky/mint/warning) · ฟอนต์ public = **Inter + Anuphan** (ต่างจากหลังบ้าน Noto Sans Thai)
+> · โลโก้ต้นฉบับ 2211×2817px เกิน 256KiB (import ไม่ได้เต็ม) → `SchoolLogo` เช็ค `public/logo.png` ถ้ามีใช้เลย ไม่งั้น fallback ไอคอนในกรอบคราม · **เจ้าของวางไฟล์เองที่ `public/logo.png`**
+- [x] `app/(public)/layout.tsx` — AnnouncementBar + Header + Footer + ฟอนต์ Inter/Anuphan · ลบ `app/page.tsx` เดิม (ชนกับ `(public)/page.tsx` ที่ map เป็น `/`)
+- [x] Navbar (`site-header` + `desktop-nav`/`mobile-nav`) — โลโก้ + ชื่อ 2 บรรทัด (site.name/site.nameEn) + เมนู + ปุ่มค้นหา + CTA ติดต่อเรา · mobile = drawer (`sheet`) · **ไม่ใช้ `navigation-menu`/`command`** (ไม่ได้ติดตั้ง — ทำ nav เรียบด้วย link แทน)
+- [x] `site-footer` — พื้นเข้ม #242B4E · 4 คอลัมน์ (แบรนด์/เมนู/ข้อมูล/ติดต่อ) ดึงจาก SiteSetting (contact + social) · social icon (facebook/youtube inline SVG เพราะ lucide v1 ตัดไอคอนแบรนด์)
+- [x] `announcement-bar` — ประกาศ active + อยู่ในช่วงเวลา (`getActiveAnnouncements` cached) · พื้นคราม + pill "ประกาศ"
+- [x] **หน้าแรก** `app/(public)/page.tsx` — query ขนาน (banner/news/works/event) + ประกอบ section:
+  - [x] **Hero** — แบรนด์ไล่เฉด + หัวเรื่อง/คำโปรย/สถิติ (จาก SiteSetting group "หน้าแรก") + `HeroSlider` (client) ภาพจาก **Banner** active + dots · ไม่มีแบนเนอร์ → placeholder
+  - [x] **ข่าว** — featured (ใบใหญ่ span 2 แถว) + 4 ใบเล็ก (`news-section`, ordering featured→publishedAt)
+  - [x] **ผลงาน/สื่อ** — 3 ใบ + play overlay + type badge (`works-section`, reuse `mediaWorkThumbnail`)
+  - [x] **กิจกรรมเร็ว ๆ นี้** — 3 รายการ (startDate≥วันนี้ หรือยังไม่จบ) + date box + แถบสี (`events-section`)
+  - [x] **CTA รับสมัคร** — กล่องไล่เฉดคราม + 2 ปุ่ม
+  - [x] Quick links strip 4 การ์ด (รับสมัคร/ปฏิทิน/เอกสาร/บุคลากร)
+- [x] เพิ่ม SiteSetting group "ข้อมูลทั่วไป" (site.nameEn) + "หน้าแรก (Hero)" (heroTitle/heroSubtitle/สถิติ 3 ตัว) — ฟอร์มตั้งค่า auto-render จากนิยาม
+- [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริง `:4000` + **screenshot desktop 1440 + mobile 390**):
+      หน้าแรก 200 · **แสดงข้อมูลจริงจาก DB ครบทุก section** (banner ภาพจริงใน hero, ข่าว featured+เล็ก, ผลงานมี play, กิจกรรม 2 รายการ, footer ดึง contact/social ที่เจ้าของกรอก) · empty section ซ่อนเอง
+      · **responsive:** desktop 3 คอลัมน์/nav แนวนอน · mobile คอลัมน์เดียว + hamburger drawer + quick links 2×2 · stats card ย้ายลงล่างบนจอเล็ก
+  - [ ] ⏸️ **รอเจ้าของยืนยันสายตา + วางไฟล์ `public/logo.png`** · ปุ่มค้นหา → `/search` (Phase 4.7) · ลิงก์หน้า feature (/news, /works…) → 404 จนกว่าจะทำ Phase 4.6
 
 ---
 
