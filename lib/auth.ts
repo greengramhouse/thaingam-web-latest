@@ -26,7 +26,10 @@ export const auth = betterAuth({
       ac,
       roles,
       defaultRole: "TEACHER",
-      adminRoles: ["SUPER_ADMIN", "ADMIN"],
+      // ⚠️ เฉพาะ SUPER_ADMIN เท่านั้นที่เป็น "admin" ของ Better Auth (จัดการ user/session)
+      //    เดิมมี ADMIN ด้วย → ADMIN ยิง /api/auth/admin/set-role ตั้งตัวเองเป็น SUPER_ADMIN ได้ (privilege escalation ยืนยันแล้ว)
+      //    ADMIN จัดการ "เนื้อหา" ผ่าน canManageContent (ไม่พึ่ง admin plugin) จึงถอดออกได้ปลอดภัย · Users = SUPER_ADMIN only (spec §3)
+      adminRoles: ["SUPER_ADMIN"],
     }),
     // nextCookies() ต้องเป็น plugin ตัวสุดท้ายเสมอ (จัดการ cookie ใน Server Actions)
     nextCookies(),

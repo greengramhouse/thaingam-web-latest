@@ -332,6 +332,23 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
 - นี่คือ **7.3 ซ้ำในรูปแบบใหม่**: "0" อาจแปลว่า "ไม่มีจริง" หรือ "query เอง match ไม่ได้" — แยกไม่ออกถ้าไม่มี control
 - **กติกา:** ให้ test data ใช้ **token ASCII** (`POSCTRL-…` / `NEGCTRL-…`) เป็นตัวชี้วัด — LIKE/`=` ตรงเสมอ ไม่ผ่านชั้น encoding
   · ลบข้อมูลไทยให้ลบด้วย `id` (ASCII) ไม่ใช่ `WHERE message LIKE 'ไทย%'`
+
+### 7.6 🔓 Better Auth admin plugin: `adminRoles` + `ac` ให้สิทธิ์ **จริง** — ADMIN ตั้ง role ตัวเองเป็น SUPER_ADMIN ได้
+
+**ช่องโหว่ privilege escalation (เจอ + แก้ใน 4.4.13):** เดิม `lib/auth.ts` ตั้ง `adminRoles: ["SUPER_ADMIN","ADMIN"]`
+และ `lib/permissions.ts` ให้ `ADMIN = ac.newRole({ ...adminAc.statements })` (สิทธิ์จัดการ user เต็ม)
+→ ADMIN ยิง `POST /api/auth/admin/set-role` ตั้งตัวเองเป็น SUPER_ADMIN ได้ตรง ๆ (ยืนยันด้วย exploit จริง: HTTP 200 role เปลี่ยน)
+รวมถึง create-user / ban / delete ผู้ใช้คนอื่นได้ทั้งหมด — ขัด spec §3 (Users = SUPER_ADMIN only)
+
+- **สาเหตุ:** endpoint `/api/auth/admin/*` **ไม่ได้ป้องกันด้วย proxy/layout** (เหมือน 7.2) — Better Auth เช็คเองจาก `adminRoles` + ac ของ role
+  · การซ่อนเมนู (`superAdminOnly`) และ `requireRole("SUPER_ADMIN")` ที่ **หน้า** ไม่ช่วย เพราะ endpoint เป็นคนละชั้น
+- **แก้ 2 จุด (ต้องทำคู่กัน):**
+  1. `auth.ts` → `adminRoles: ["SUPER_ADMIN"]` (ถอด ADMIN ออกจากการเป็น "admin" ของ Better Auth)
+  2. `permissions.ts` → `ADMIN = ac.newRole({})` (ไม่มีสิทธิ์ admin plugin เลย · ADMIN จัดการ *เนื้อหา* ผ่าน `canManageContent` ซึ่งไม่พึ่ง plugin นี้)
+- **ยืนยันหลังแก้ (positive + negative control):** ADMIN ยิง set-role/create-user/list-users → **403** ทั้งหมด · SUPER_ADMIN ยิงชุดเดียวกัน → **200**
+  ⇒ พิสูจน์ว่า lockdown ได้ผลและไม่ได้พังของเดิม
+- 📌 **`authClient.admin.*` typing:** ต้องส่ง `adminClient({ ac, roles })` ใน `lib/auth-client.ts` ไม่งั้น type ของ `createUser`/`setRole`
+  เป็น `"user" | "admin"` (default) แทน role จริงของโปรเจกต์ · Better Auth มี error code `YOU_CANNOT_BAN_YOURSELF` กัน self-ban ให้ระดับ server อยู่แล้ว (UI ยัง disable ปุ่มบนแถวตัวเองเป็น defense-in-depth)
   · *(content-type ของการยิง action ไม่เกี่ยว — `application/json` เข้า DB ได้ปกติ ตาม 7.2)*
 
 ---

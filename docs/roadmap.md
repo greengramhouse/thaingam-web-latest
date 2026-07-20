@@ -365,9 +365,21 @@
         · 🔒 **ยิง action ตรง:** TEACHER `setMessageRead`→`ไม่มีสิทธิ์` (isRead คง f) · **positive control SUPER_ADMIN→isRead=t** · TEACHER `deleteContactMessage`→`ไม่มีสิทธิ์` (ข้อความยังอยู่) ⇒ บล็อกด้วย RBAC · ล้าง test data + temp TEACHER แล้ว
   > 🐛 **กับดักที่กันไว้: mark-read ต้องอยู่ใน useEffect ไม่ใช่ตอน render** — Next prefetch `<Link>` หน้ารายละเอียดตอน hover → ถ้า mark อ่านแล้วใน server render จะกลายเป็นอ่านทั้งที่แค่เอาเมาส์ชี้ (ยังไม่เปิด)
   - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** auto-mark-read ตอนเปิดหน้าจริง (client useEffect — curl รัน JS ไม่ได้), ปุ่มสลับ/ลบ, ตอบกลับ mailto, toast
-- [ ] **4.4.13 Users** *(เฉพาะ SUPER_ADMIN)* — สร้าง user, กำหนด role, ban/unban, reset
-      *(ทางเดียวที่จะมี user ใหม่ เพราะปิดสมัครเองแล้ว → ใช้ `authClient.admin.createUser`)*
-- [ ] ✅ verify: ADMIN สร้าง DRAFT → กด publish → ขึ้นหน้า public; TEACHER เข้าเมนูเนื้อหาไม่ได้
+- [x] **4.4.13 Users** *(เฉพาะ SUPER_ADMIN)* — สร้าง user, กำหนด role, ban/unban, reset password, ลบ ✅
+  - [x] 🔓 **แก้ privilege escalation ก่อน (สำคัญ):** เดิม `adminRoles: ["SUPER_ADMIN","ADMIN"]` + `ADMIN = ac.newRole({...adminAc.statements})`
+        → **ADMIN ยิง `/api/auth/admin/set-role` ตั้งตัวเองเป็น SUPER_ADMIN ได้จริง** (พิสูจน์แล้ว HTTP 200 role เปลี่ยน) รวมถึง create/ban/delete ผู้ใช้
+        → แก้: `auth.ts` `adminRoles: ["SUPER_ADMIN"]` + `permissions.ts` `ADMIN = ac.newRole({})` (ADMIN จัดการเนื้อหาผ่าน `canManageContent` ไม่พึ่ง admin plugin) · ดู problems.md 7.6
+  - [x] `lib/auth-client.ts` — `adminClient({ ac, roles })` ให้ client รู้จัก role จริง (ไม่งั้น type เป็น `"user"|"admin"`)
+  - [x] `lib/validations/user.ts` — `createUserSchema` (name/email/password≥8/role) · `resetPasswordSchema` · `USER_ROLES`
+  - [x] component: `user-create-form` (`authClient.admin.createUser` · อีเมลซ้ำ→ขึ้นตรงช่อง) · `user-row-actions` (dropdown: เปลี่ยนบทบาท/รีเซ็ตรหัสผ่าน/แบน-ปลดแบน/ลบ ผ่าน `authClient.admin.*` · **disable action บนแถวตัวเองกันล็อกตัวเองออก**)
+  - [x] หน้า: `/admin/users` (`requireRole("SUPER_ADMIN")` · ค้นหา ชื่อ/อีเมล + กรอง role + pagination + badge role/สถานะ + ป้าย "(บัญชีคุณ)") · `/new` → เปิดเมนู `ready:true`
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริงบน `:4000`):
+        · 🔒 **หลังแก้: ADMIN ยิง set-role/create-user/list-users ตรง → 403 ทั้งหมด · เข้าหน้า /admin/users → 307 `/`** · guest→307 · **SUPER_ADMIN→200** list/new
+        · **positive control:** SUPER_ADMIN ยิงชุดเดียวกัน → 200 (set-role demote สำเร็จ) ⇒ lockdown ได้ผล ไม่พังของเดิม
+        · **ฟีเจอร์ครบ (SUPER_ADMIN):** createUser (TEACHER) · banUser→banned=t · unbanUser→f · **setUserPassword→ล็อกอินด้วยรหัสใหม่ 200** · removeUser→หายจริง · list แสดง email/role label/ป้ายบัญชีคุณ · ล้าง test users แล้ว (เหลือ seed SUPER_ADMIN)
+  > 🐛 **exploit ที่เจอ+ปิด:** endpoint `/api/auth/admin/*` เป็นคนละชั้นกับ proxy/หน้า — ซ่อนเมนู + `requireRole` ที่หน้าไม่พอ ต้องล็อกที่ `adminRoles`+`ac` (problems.md 7.6)
+  - [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** สร้างผู้ใช้ผ่านฟอร์ม, dropdown เปลี่ยน role/รีเซ็ตรหัส/แบน/ลบ ผ่าน dialog, toast, ปุ่ม disable บนแถวตัวเอง
+- [x] ✅ **Phase 4.4 เสร็จครบทุกโมดูล** — verify RBAC โดยรวม: ADMIN/SUPER_ADMIN จัดการเนื้อหา+publish ได้ · TEACHER ถูกกันทุก action (ยิงตรง→ปฏิเสธ) · Users/Settings = SUPER_ADMIN only (ADMIN ก็เข้าไม่ได้ ทั้งหน้าและ endpoint) · *(ยกการทดสอบคลิกจริงหน้า public publish→แสดงผล ไปทำพร้อม Phase 4.5/4.6 ที่มีหน้า public จริง)*
 
 ---
 

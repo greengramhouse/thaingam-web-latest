@@ -73,7 +73,7 @@ export const navGroups: NavGroup[] = [
     title: "ระบบ",
     items: [
       { href: "/admin/messages", label: "ข้อความติดต่อ", icon: Mail, ready: true },
-      { href: "/admin/users", label: "ผู้ใช้งาน", icon: Users, ready: false, phase: "4.4.13", superAdminOnly: true },
+      { href: "/admin/users", label: "ผู้ใช้งาน", icon: Users, ready: true, superAdminOnly: true },
       { href: "/admin/settings", label: "ตั้งค่าเว็บไซต์", icon: Settings, ready: true, superAdminOnly: true },
     ],
   },
