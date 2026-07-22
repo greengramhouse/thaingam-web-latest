@@ -164,3 +164,17 @@ body {
     @apply font-sans;
   }
 }
+/* Marquee (แถบประกาศเลื่อน) — Tailwind v4 ต้องลง animation ผ่าน @theme (`--animate-*`)
+   ไม่งั้น Lightning CSS strip `@keyframes`/custom class ทิ้ง (raw CSS ไม่ออก → เลื่อนไม่ได้)
+   track มีเนื้อหา 2 ชุด → เลื่อน -50% = วนไร้รอยต่อ · hover/tap หยุดทำที่ className */
+@theme {
+  --animate-marquee: marquee 28s linear infinite;
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}

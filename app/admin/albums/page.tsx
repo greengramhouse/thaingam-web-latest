@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 import { Heart, ImageOff, Images, Plus } from "lucide-react";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -155,7 +154,7 @@ export default async function AdminAlbumsPage({
                           </span>
                         </TableCell>
                         <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
-                          {album.eventDate ? format(album.eventDate, "d MMM yy", { locale: th }) : "—"}
+                          {album.eventDate ? formatThaiDate(album.eventDate, "short") : "—"}
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={album.status} />

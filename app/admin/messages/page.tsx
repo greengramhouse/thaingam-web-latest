@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -146,7 +145,7 @@ export default async function AdminMessagesPage({
                         )}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                        {format(m.createdAt, "d MMM yy", { locale: th })}
+                        {formatThaiDate(m.createdAt, "short")}
                       </TableCell>
                       <TableCell>
                         <MessageRowActions id={m.id} label={`ข้อความจาก ${m.name}`} isRead={m.isRead} />

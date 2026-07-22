@@ -241,7 +241,7 @@ model Album {
   status      PublishStatus @default(PUBLISHED)
   likeCount   Int           @default(0) // denormalized — อัปเดตตอนกดไลก์ (Phase 4.6) · แอดมินดูอย่างเดียว
   photos      Photo[]
-  // AlbumLike[] จะเติมกลับตอน Phase 4.6 (ปุ่มไลก์ + fingerprint กันซ้ำ)
+  likes       AlbumLike[]
   authorId    String?
   // ลบ user แล้วอัลบั้มต้องไม่หาย → คืน null (ตรงกับ News/MediaWork/Event)
   author      User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
@@ -264,6 +264,20 @@ model Photo {
 
   @@index([albumId, order])
   @@map("photo")
+}
+
+/// ไลก์อัลบั้มแบบไม่ต้องล็อกอิน — 1 visitor (cookie id) ไลก์ได้ครั้งเดียวต่ออัลบั้ม
+/// likeCount ใน Album เก็บ denormalized ไว้ (อัปเดตพร้อมกันใน transaction ตอน toggle)
+model AlbumLike {
+  id          String   @id @default(cuid())
+  albumId     String
+  album       Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  fingerprint String // visitor cookie id — กันไลก์ซ้ำจากเบราว์เซอร์เดิม
+  createdAt   DateTime @default(now())
+
+  @@unique([albumId, fingerprint])
+  @@index([albumId])
+  @@map("album_like")
 }
 
 /// ศูนย์ดาวน์โหลดเอกสาร — ไฟล์ (PDF ฯลฯ) เก็บเป็น URL (Cloudinary/Drive) เท่านั้น ไม่มีไฟล์บน server (spec §5)

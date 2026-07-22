@@ -242,6 +242,28 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 - ✅ **เพิ่ม feedback แล้ว:** `<img onError>` ใน [`image-upload.tsx`](../components/admin/image-upload.tsx) โชว์กล่อง "โหลดรูปไม่สำเร็จ..." แทนที่จะเงียบ
   (เก็บ **URL ที่ fail** ไม่ใช่ boolean → พอวางลิงก์ใหม่ reset เองตอน render · เลี่ยง `setState` ใน effect ที่ lint `react-hooks/set-state-in-effect` จับ)
 
+### 5.7 🐛 Tailwind v4 **strip `@keyframes` + custom animation class ที่เขียน raw CSS ทิ้ง** → animation ไม่ทำงาน (นิ่งสนิท)
+
+- อาการ: เขียน `@keyframes marquee {...}` + `.animate-marquee { animation: marquee 28s ... }` ตรง ๆ ใน `globals.css` → **ไม่ออกใน CSS ที่ compile เลย** (grep คำว่า `marquee` ใน `/_next/static/*.css` = 0) → element นิ่ง
+  เพราะ Tailwind v4 (Oxide + Lightning CSS) เก็บเฉพาะสิ่งที่มันรู้จัก · raw keyframe/class ที่ไม่ผ่าน engine ถูกตัด
+- ✅ **วิธีถูก:** ลง animation ผ่าน **`@theme`** ให้ Tailwind gen utility + เก็บ keyframe ให้:
+  ```css
+  @theme {
+    --animate-marquee: marquee 28s linear infinite;   /* → gen .animate-marquee */
+    @keyframes marquee { from {…} to {…} }             /* วาง keyframe ใน @theme ด้วย */
+  }
+  ```
+  แล้วใช้ `className="animate-marquee"` ได้ปกติ · hover/variant ใช้ arbitrary `hover:[animation-play-state:paused]` ที่ className (อย่าเขียน `.x:hover{}` raw — โดน strip เหมือนกัน)
+- **ยืนยันว่า animate จริง (ไม่ใช่แค่ CSS มา):** อ่าน `getComputedStyle(el).transform` 2 ครั้งห่างกัน ~700ms ผ่าน **Chrome CDP** — ถ้า matrix เปลี่ยน = เลื่อนจริง (screenshot นิ่งดูไม่ออก)
+- 📝 **marquee ที่ดูปลิเคต content 2 ชุด (loop -50%) จะเห็นซ้ำตอน content สั้นกว่ากรอบ** (จอกว้าง) → วัด `scrollWidth > clientWidth` ด้วย `ResizeObserver` แล้ว **duplicate + เลื่อนเฉพาะตอนล้น** ไม่งั้นแสดงชุดเดียวนิ่ง
+
+### 5.8 🐛 min-width:auto ทำ **horizontal overflow ทั้งหน้า** (grid/flex child ไม่ยอมหด)
+
+- อาการ: มือถือเลื่อนแนวนอนได้ · ข้อความ/การ์ดคลิปขอบขวาทั้งหน้า (ไม่ใช่แค่ element เดียว — ตัวที่กว้างสุดดัน `body` scrollWidth)
+- 2 ต้นตอที่เจอ (Hero + marquee): **(1)** `grid` ไม่ใส่ `grid-cols-1` ฐาน → auto track ขยายตาม max-content เกิน viewport (ต้อง `grid-cols-1` = `minmax(0,1fr)`) · **(2)** flex child ที่ครอบ content กว้าง (`w-max`, nowrap) ขาด **`min-w-0`** → ไม่หดต่ำกว่า content
+- ✅ กฎ: **grid/flex child ที่ต้องหดได้ ใส่ `min-w-0`** (+ grid ใส่ `grid-cols-1` ฐานเสมอถ้าจะ override เป็นหลายคอลัมน์ที่ lg)
+- **วัด/หา element ผิด:** Chrome CDP `Emulation.setDeviceMetricsOverride` (จำลองกว้างเป๊ะ) → eval `document.documentElement.scrollWidth - clientWidth` + ไล่ `getBoundingClientRect().right > vw` · ⚠️ `chrome --screenshot` แยก instance จับภาพตอน dev **recompile** ได้ภาพ **stale** — เชื่อ CDP ที่โหลดเสร็จแล้วแทน
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch

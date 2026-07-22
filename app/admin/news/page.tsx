@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 import { Plus, Star } from "lucide-react";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -140,7 +139,7 @@ export default async function AdminNewsPage({
                         {item.author?.name ?? <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                        {format(item.createdAt, "d MMM yy", { locale: th })}
+                        {formatThaiDate(item.createdAt, "short")}
                       </TableCell>
                       <TableCell>
                         <NewsRowActions id={item.id} title={item.title} status={item.status} />

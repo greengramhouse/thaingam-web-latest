@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { format, startOfMonth } from "date-fns";
-import { th } from "date-fns/locale";
+import { startOfMonth } from "date-fns";
+import { formatThaiDate } from "@/lib/date";
 import {
   ArrowUp,
   Calendar,
@@ -236,7 +236,7 @@ async function RecentNews() {
                 <StatusBadge status={item.status} />
               </td>
               <td className="px-5 py-3 text-right text-xs whitespace-nowrap text-muted-foreground tabular-nums">
-                {format(item.publishedAt ?? item.createdAt, "d MMM yy", { locale: th })}
+                {formatThaiDate(item.publishedAt ?? item.createdAt, "short")}
               </td>
             </tr>
           ))}

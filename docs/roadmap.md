@@ -399,14 +399,20 @@
   - [x] **ข่าว** — featured (ใบใหญ่ span 2 แถว) + 4 ใบเล็ก (`news-section`, ordering featured→publishedAt)
   - [x] **ผลงาน/สื่อ** — 3 ใบ + play overlay + type badge (`works-section`, reuse `mediaWorkThumbnail`)
   - [x] **กิจกรรมเร็ว ๆ นี้** — 3 รายการ (startDate≥วันนี้ หรือยังไม่จบ) + date box + แถบสี (`events-section`)
-  - [x] **CTA รับสมัคร** — กล่องไล่เฉดคราม + 2 ปุ่ม
-  - [x] Quick links strip 4 การ์ด (รับสมัคร/ปฏิทิน/เอกสาร/บุคลากร)
+  - [x] **CTA ปิดหน้า** — กล่องไล่เฉดคราม + 2 ปุ่ม *(เดิมเป็น CTA รับสมัคร → เปลี่ยนเป็น "ติดตามข่าวสาร" 2026-07-21 ดูหมายเหตุตัดรับสมัคร)*
+  - [x] Quick links strip 4 การ์ด *(อัลบั้มภาพ/ปฏิทิน/เอกสาร/บุคลากร — เดิมการ์ดแรกเป็นรับสมัคร → เปลี่ยนเป็นอัลบั้มภาพ)*
 - [x] เพิ่ม SiteSetting group "ข้อมูลทั่วไป" (site.nameEn) + "หน้าแรก (Hero)" (heroTitle/heroSubtitle/สถิติ 3 ตัว) — ฟอร์มตั้งค่า auto-render จากนิยาม
 - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริง `:4000` + **screenshot desktop 1440 + mobile 390**):
       หน้าแรก 200 · **แสดงข้อมูลจริงจาก DB ครบทุก section** (banner ภาพจริงใน hero, ข่าว featured+เล็ก, ผลงานมี play, กิจกรรม 2 รายการ, footer ดึง contact/social ที่เจ้าของกรอก) · empty section ซ่อนเอง
       · **responsive:** desktop 3 คอลัมน์/nav แนวนอน · mobile คอลัมน์เดียว + hamburger drawer + quick links 2×2 · stats card ย้ายลงล่างบนจอเล็ก
   - [x] เจ้าของวาง `public/logo.png` แล้ว (2026-07-20) → SchoolLogo หยิบไปใช้อัตโนมัติ · ทดสอบคลิกจริงแล้ว ใช้ได้
-  - [ ] 🐛 **TODO responsive (เจ้าของเจอบนมือถือ 2026-07-20):** ข้อความ **แถบประกาศด้านบน** + **คำขวัญโรงเรียน (hero badge)** ถูกตัด (`truncate`) บนจอเล็ก → ควรให้ wrap/ย่อขนาดแทนตัดทิ้ง (แถบประกาศอาจเป็น marquee หรือ 2 บรรทัด · badge คำขวัญยาวให้ wrap) — ไว้แก้รอบหน้า
+  - [x] ✅ **แก้ responsive Hero + แถบประกาศแล้ว (2026-07-21 — verify ด้วย Chrome CDP วัด overflow=0 ที่ 320/360/390/768px):**
+        - **แถบประกาศ → marquee** (`announcement-marquee` client · โชว์ประกาศ active ทุกอัน · hover หยุด)
+          > 🐛 **2 บั๊กที่เจ้าของเจอตอนทดสอบ (แก้แล้ว):** (1) **นิ่งสนิท** — เขียน `@keyframes`/`.animate-marquee` raw ใน globals.css แต่ **Tailwind v4 strip ทิ้ง** (CSS ไม่ออก) → ต้องลงผ่าน **`@theme --animate-marquee`** (problems.md 5.7) · (2) **เห็นข้อความซ้ำ 2 ชุด** ตอนประกาศเดียว+จอกว้าง (duplicate สำหรับ loop โผล่พร้อมกัน) → วัด `ResizeObserver` **เลื่อน/duplicate เฉพาะตอนล้นกรอบ** (มือถือ) · จอกว้างพอดี = นิ่งชุดเดียว · verify CDP: 1440px `copies:1,animating:false` · 390px `copies:2,animating:true`
+        - **คำขวัญ (hero badge) + หัวเรื่อง + subtitle** เลิก `truncate` → wrap · หัวเรื่องลดเป็น `text-[26px]` บนจอเล็ก
+        - 🐛 **ต้นตอ overflow แนวนอนทั้งหน้า = กับดัก min-width:auto** — (1) hero `grid` ไม่มี `grid-cols-1` ฐาน → auto track ขยายเกิน viewport → เพิ่ม `grid-cols-1` (minmax(0,1fr)) + `min-w-0` ที่ทั้งสองคอลัมน์ · (2) marquee viewport `flex-1 overflow-hidden` ขาด `min-w-0` → flex item ไม่หดต่ำกว่า track `w-max` ดันความกว้าง body → เพิ่ม `min-w-0`
+        - **banner หลักใหญ่เกินบน tablet/มือถือ** (4/3 เต็มกว้าง) → `hero-slider` ใช้ `aspect-video lg:aspect-[4/3]` (16/9 จอเล็ก เตี้ยลง+เห็นภาพกว้างขึ้น · 4/3 เฉพาะ desktop 2 คอลัมน์)
+        > 📸 **บทเรียน:** Chrome `--screenshot` แยก instance จับภาพตอน dev server กำลัง recompile ได้ภาพ **stale** (เห็นคลิปทั้งที่แก้แล้ว) → ยืนยันด้วย **CDP `Page.reload`+วัด `scrollWidth-clientWidth` / `Page.captureScreenshot`** บน instance เดียวที่โหลดเสร็จแทน (Node 24 มี global WebSocket ต่อ CDP ตรงได้)
   - [ ] ⏸️ ปุ่มค้นหา → `/search` (Phase 4.7) · ลิงก์หน้า feature (/news, /works…) → 404 จนกว่าจะทำ Phase 4.6
 
 ---
@@ -415,20 +421,68 @@
 
 **เป้าหมาย:** หน้าเนื้อหาสาธารณะครบ (ทำตาม Playbook ทุกหน้า)
 
-- [ ] **ข่าว** `/news` (list + filter category/tag + pagination) & `/news/[slug]` (+ viewCount++, related)
-  > ⚠️ **ต้องตัดสินใจเรื่อง `viewCount++` ตั้งแต่ตอนออกแบบหน้านี้** — มันคือการ **write ทุก view**
-  > ซึ่งขัดกับการ cache หน้าโดยตรง (cache แล้วนับไม่ขึ้น / นับแล้ว cache ไม่ได้)
-  > ทางเลือก: Server Action ยิงแยกหลัง render · route handler เบา ๆ · หรือ batch/นับแบบ approximate
-  > ถ้าไม่คิดก่อน จะได้หน้าข่าวที่ cache ไม่ได้เลยทั้งที่เป็นหน้า traffic สูงสุดของเว็บ
-- [ ] **ผลงาน** `/works` (grid) & `/works/[slug]` — **YouTubeEmbed** เล่นในหน้า / video / article
-- [ ] **ปฏิทิน** `/calendar` — FullCalendar (month/list, สี event, คลิกดูรายละเอียด) — **ติดตั้ง FullCalendar deps ที่นี่** (`@fullcalendar/react @fullcalendar/daygrid @fullcalendar/list @fullcalendar/interaction`) *(เลื่อนมาจาก 4.0)*
-- [ ] **อัลบั้ม** `/albums` & `/albums/[slug]` — lightbox + **ปุ่มกดไลก์** (Server Action + fingerprint กันซ้ำ, optimistic UI)
-- [ ] **เอกสาร** `/documents` — list ตามหมวด + ปุ่มดาวน์โหลด (downloadCount++)
-- [ ] **บุคลากร** `/staff` — การ์ดเรียงตาม order/แผนก
-- [ ] **รับสมัคร / ระเบียบ / หลักสูตร** — render จาก `Page` (DB) ผ่าน `/[slug]`
-- [ ] **เกี่ยวกับ** `/about` — hardcode + ดึง SiteSetting บางส่วน
-- [ ] **ติดต่อ** `/contact` — ฟอร์ม (สร้าง ContactMessage) + Google Map embed + ข้อมูลติดต่อ
-- [ ] ✅ verify: ทุกหน้าเปิดได้ มี 4 states, mobile ใช้งานได้
+> 🎨 **แบบหน้า public จาก design MCP:** `Public Pages.dc.html` (project "วัดไทยงาม เว็บไซต์โรงเรียน") — ครบ 6 หน้า (ข่าว/รายละเอียดข่าว/ผลงาน/ปฏิทิน/บุคลากร/ติดต่อ) โทนเดียวกับหน้าแรก · `Index.dc.html` เป็นแค่หน้าปกสารบัญ mockup ไม่ใช่หน้าเว็บ
+> 📅 **เปลี่ยนวันที่ทั้งเว็บเป็น พ.ศ. แล้ว (2026-07-21 — หนี้ 4.4.4/4.8)** — `lib/date.ts` (`formatThaiDate` long/medium/short/dayMonth · `formatThaiDateTime`) แทน `format(...,"d MMM yy",{locale:th})` เดิมทุกจุด (public + admin: news/works/albums/pages/users/messages/dashboard + `lib/event.ts` `formatEventRange` + `lib/announcement.ts`) · date-fns ให้ปี ค.ศ. เสมอ จึง format วัน+เดือนแล้วต่อปี (ค.ศ.+543) เอง
+
+- [x] **ข่าว** `/news` (list + filter category + pagination) & `/news/[slug]` (viewCount, related) ✅
+  - [x] `/news` — PageHero ไล่เฉดคราม + pill กรองหมวด (link `?category=slug`) + ค้นหา (reuse `table-search` → `?q=` title/excerpt) + กริด 3 คอลัมน์ + `PublicPagination` (เลขหน้า + … ตาม mockup) · empty state
+  - [x] `/news/[slug]` — article + sidebar "ข่าวที่เกี่ยวข้อง" (หมวดเดียวกัน 3 ข่าว) · badge/วันที่ long/ยอดวิว · tags · `generateMetadata` (title/excerpt) · `notFound()` ถ้าไม่มี/ไม่ PUBLISHED
+  - [x] `getNews()` ครอบ `React.cache` กัน query ซ้ำระหว่าง `generateMetadata` กับหน้า
+  - [x] component ใหม่: `page-hero` · `public-pagination` · `news-view-counter` (client)
+  - [x] เนื้อหา render ด้วย `dangerouslySetInnerHTML` + arbitrary-variant prose (เหมือน editor แต่ขนาดใหญ่กว่า) · *(sanitize HTML → Phase 4.8)*
+  > ✅ **`viewCount++` แก้ตามที่กังวลไว้:** `server/actions/news-view.ts` `incrementNewsView(id)` — ยิงจาก client `useEffect` (ไม่ใช่ตอน render) + `useRef` กัน double-invoke (Strict Mode) + **ไม่ revalidate** → หน้ารายละเอียดยัง cacheable ได้ตอนเปิด cache ใน 4.8 (การนับเป็น side-effect เบา ๆ แยกจาก render)
+  - [x] ✅ verify (typecheck + lint ผ่าน · HTTP จริง `:4000`): `/news`=200 (+ `?category=`, `?q=`) · detail=200 · **ไม่มี/DRAFT slug → 404** · list การ์ด/วันที่ พ.ศ. (2569)/badge sky · detail long date "17 กรกฎาคม 2569"/related/back link ขึ้นครบ
+  > 🐛 **EPERM `.next` manifest (problems.md 2.4) โผล่ตอน compile route แรกที่มี server action ใหม่** (`server-reference-manifest.js` ถูก rewrite ตอนเจอ `incrementNewsView`) → 500 ครั้งเดียว, request ถัดไป compile ใหม่ = 200 · ไม่ใช่บั๊กโค้ด (มี dev server เก่าค้างถือ handle → kill 4000 + `rm -rf .next` + restart)
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** ค้นหา/กรองหมวดสลับไปมา · viewCount · related คลิกข้าม · responsive *(tag filter ยังไม่ทำ — mockup ใช้แค่หมวด)*
+- [x] **ผลงาน** `/works` (grid) & `/works/[slug]` — **YouTubeEmbed** เล่นในหน้า / video / article ✅
+  - [x] `/works` — PageHero + แท็บ ทั้งหมด/วิดีโอ/บทความ (`?type=video|article` · วิดีโอ = YOUTUBE+VIDEO) + กริด 3 คอลัมน์ + play overlay + badge ชนิด + "โดย {author}" + `PublicPagination` · empty state
+  - [x] `/works/[slug]` — render ตามชนิด: **YOUTUBE → `YouTubeEmbed`** (nocookie iframe, `loading=lazy`) · VIDEO → `<video controls poster>` · ARTICLE → รูปปก + prose · + badge/วันที่ long/author/description/tags · `generateMetadata` · `notFound()`
+  - [x] component ใหม่ `youtube-embed` (reuse `extractYoutubeId`/`youtubeEmbedUrl`) · reuse `mediaWorkThumbnail`
+  - [x] ยก prose class เป็น `lib/prose.ts` (`articleProse`) ใช้ร่วม news/works detail (+หน้า Page ทีหลัง)
+  - [x] ✅ verify (tsc + lint ผ่าน · HTTP `:4000`): `/works`=200 (+`?type=video|article`) · detail=200 (ฝัง `youtube-nocookie.com/embed/…` จริง) · slug ไม่มี→404 · แท็บบทความ empty state · badge/play/author/วันที่ พ.ศ. ขึ้นครบ
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** เล่นวิดีโอ YouTube ในหน้า · แท็บสลับ · responsive *(VIDEO/ARTICLE ยังไม่มีข้อมูลชนิดนี้ใน DB — รอแอดมินเพิ่ม)*
+- [x] **ปฏิทิน** `/calendar` — FullCalendar (month/list, สี event, คลิกดูรายละเอียด) ✅
+  - [x] ติดตั้ง FullCalendar **pin 6.1.21 ทั้งชุด** (`@fullcalendar/react core daygrid list interaction`) — ⚠️ ครั้งแรก pnpm ลง core/react เป็น 7.0.1 แต่ plugin 6.1.21 (major ไม่ตรง = พัง) → ต้อง pin เวอร์ชันเดียวกันทุกตัว
+  - [x] `components/public/event-calendar` (client) — dayGrid/list + locale `th` + toolbar (prev/next/today · เดือน/รายการ) · สีจาก `event.color` · **allDay end +1 วัน** (FC ตี end เป็น exclusive) · คลิก event → Dialog (ชื่อ + `formatEventRange` + สถานที่)
+  - [x] `/calendar` (server) query PUBLISHED events → ส่ง ISO ให้ client · **ไม่ทำ legend ตายตัวตาม mockup** (สีเป็นค่าอิสระต่อ event ไม่ใช่หมวด)
+  > 📝 **FullCalendar โหลดด้วย `next/dynamic({ssr:false})`** ไม่ใช่ mounted-state guard — lint rule ใหม่ `react-hooks/set-state-in-effect` ห้าม `setState` ใน `useEffect` (`useEffect(()=>setMounted(true),[])` โดนแบน) · dynamic ssr:false ได้ผลเดียวกันแต่สะอาดกว่า + มี loading skeleton
+  - [x] ✅ verify (tsc + lint ผ่าน · HTTP `:4000`): `/calendar`=200 (shell + skeleton — FC เรนเดอร์ client) ไม่มี error ในล็อก · 3 events PUBLISHED ใน DB
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** widget FullCalendar เรนเดอร์/สลับ month↔list · สี event · คลิกเปิด Dialog · prev/next/today · mobile
+- [x] **อัลบั้ม** `/albums` & `/albums/[slug]` — lightbox + **ปุ่มกดไลก์** (Server Action + fingerprint กันซ้ำ, optimistic UI) ✅
+  - [x] schema: **`AlbumLike`** (+ `Album.likes` relation ที่เลื่อนไว้จาก 4.4.6) → migrate `add_album_like` (additive ล้วน · `@@unique([albumId, fingerprint])` + `onDelete: Cascade`)
+  - [x] **`server/actions/album-like.ts` `toggleAlbumLike`** — visitor ระบุด้วย **cookie `visitor_id`** (httpOnly, ตั้งครั้งแรกที่กดไลก์ · แม่นกว่า IP+UA) · like/unlike ใน `$transaction` (upsert/delete AlbumLike + inc/dec likeCount พร้อมกัน) · unique กันไลก์ซ้ำ
+  - [x] `album-like-button` (client, **optimistic** — สลับ+นับทันทีแล้ว sync ค่าจริง) · `photo-gallery` (client — กริด + **lightbox** เต็มจอ prev/next, Esc/ลูกศร, ล็อกสกอลล์พื้นหลัง)
+  - [x] `/albums` — PageHero + กริดการ์ด (cover=coverImage หรือรูปแรก · จำนวนรูป overlay · likeCount) · empty state · `/albums/[slug]` — header + like button (อ่าน liked ของ visitor จาก cookie ฝั่ง RSC) + gallery · `generateMetadata` · `notFound()`
+  - [x] ✅ verify (tsc + lint · HTTP `:4000`): `/albums`=200 · detail=200 · slug มั่ว=404 · 🔒 **ยิง `toggleAlbumLike` ตรง (Next-Action id + cookie jar จำลอง visitor เดิม):** like#1 → **likeCount 0→1 + album_like 0→1 + ตั้ง cookie visitor_id** · like#2 (cookie เดิม) → **unlike 1→0 + 0 row** ⇒ transaction + unique + cookie fingerprint ทำงานครบ · DB สะอาด
+  > 🐛 EPERM `.next` ตอน compile detail ครั้งแรก (มี server action ใหม่) → 500 ครั้งเดียว, ถัดไป 200 (เหมือน news/works — Windows, ไม่ใช่บั๊ก)
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** lightbox เปิด/เลื่อน/ปิด · ปุ่มไลก์ optimistic + refresh แล้วสถานะคง (cookie) · responsive กริด
+- [x] **เอกสาร** `/documents` — list ตามหมวด + ปุ่มดาวน์โหลด (downloadCount++) ✅
+  - [x] `/documents` — PageHero + จัดกลุ่มตาม `category` (null→"ทั่วไป") + การ์ดแถว (ไอคอน + ชื่อ + `documentFileLabel` + downloadCount + ปุ่มดาวน์โหลด) · empty state
+  - [x] **`/documents/[id]/download` route handler** — นับ downloadCount++ **ตอนคลิกจริง** แล้ว `redirect(fileUrl)` · ลิงก์เป็น **`<a>` ธรรมดา ไม่ใช่ `<Link>`** (กัน prefetch นับเกินตอน hover — บทเรียนเดียวกับ mark-read 4.4.12) · หน้า list ยัง cacheable
+  - [x] ✅ verify (tsc + lint ผ่าน · HTTP `:4000`): `/documents`=200 · **download route: 307 → fileUrl จริง (Google Drive) + downloadCount 0→1** · bad id→404 · เลขเป็นอารบิก (ตรง mockup) · ล้างค่าทดสอบกลับ 0
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** กดปุ่มดาวน์โหลดเปิดไฟล์จริง · responsive
+- [x] **บุคลากร** `/staff` — การ์ดเรียงตาม order/แผนก ✅
+  - [x] `/staff` — PageHero + **จัดกลุ่มตาม `department`** (null→"บุคลากรอื่น ๆ") เรียงกลุ่มตามลำดับที่พบ (staff เรียง `order asc,name asc` → กลุ่มคนลำดับต้นมาก่อน) · แถบสีหัวกลุ่มวน primary→sky→mint · การ์ดรูปสี่เหลี่ยม + ชื่อ + ตำแหน่ง · fallback ไอคอน `UserRound` · empty state · **ไม่มีหน้า detail** (ตาม roadmap)
+  - [x] ✅ verify (tsc + lint ผ่าน · HTTP `:4000`): `/staff`=200 · group "ฝ่ายบริหาร" + ตำแหน่ง "ผู้อำนวยการ" + แถบ primary ขึ้น (isActive 2 คน)
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** รูปจริง · responsive 4→2 คอลัมน์ *(มีกลุ่มเดียวใน DB ตอนนี้ — สีแถบวนหลายกลุ่มรอข้อมูลเพิ่ม)*
+- [x] **ระเบียบ / หลักสูตร (+ หน้าอื่นที่แอดมินเพิ่ม)** — render จาก `Page` (DB) ผ่าน `/[slug]` ✅ *(ตัด "รับสมัคร" ออก — ดูหมายเหตุด้านล่าง)*
+  - [x] `app/(public)/[slug]/page.tsx` — dynamic route ท้ายสุด (folder ที่มีชื่อ match ก่อน) · getPage cache + `generateMetadata` · PageHero + prose (`articleProse`) · **ไม่มี/DRAFT → 404**
+  - [x] ✅ verify (tsc+lint · HTTP): `/regulations`+`/curriculum` (PUBLISHED)=200 · slug มั่ว/ไม่มี=404
+
+> 🗑️ **ตัด "การรับสมัครนักเรียน" ออกทั้งหมด (2026-07-21 — เจ้าของสั่ง โรงเรียนไม่มีการรับสมัคร):**
+> ปุ่ม/ลิงก์ `/admission` เอาออกจาก **hero (สมัครเรียน→"ข่าวสารและกิจกรรม"/news)** · **CtaSection (สมัครเรียน→ดูข่าวสาร, หัวเรื่องเป็น "ติดตามข่าวสาร")** · **quick-links (การ์ดรับสมัคร→อัลบั้มภาพ)** · **navbar/footer** (ลบลิงก์การรับสมัคร) ·
+> ลบหน้า `admission` ออกจาก `prisma/seed.ts` + ลบ row ใน DB (เดิมเป็น DRAFT placeholder ยังไม่มีเนื้อหาจริง) · เก็บ placeholder example ที่อ้างรับสมัครใน admin (banner-form/page-form/pages description) → เปลี่ยนเป็นตัวอย่างอื่น · `Page`/`/[slug]` ยังยืดหยุ่น แอดมินสร้าง slug อะไรก็ได้
+
+> 🖼️ **การ์ดภาพข่าว/กิจกรรมรองรับภาพแนวตั้ง+แนวนอนคละกัน (2026-07-21 — เจ้าของสั่ง):** ทำ `components/public/cover-image.tsx` — ภาพจริง `object-contain` (เห็นเต็มใบ ไม่ครอป) ซ้อนบนพื้นหลังภาพเดิมเบลอ `object-cover blur-2xl` (เติมกรอบให้เต็ม ไม่เหลือช่องโล่ง · โหลด URL เดียว browser cache) · ใช้ที่ news-section (หน้าแรก) · news list · news detail cover · news-card · **verify HTTP: `object-contain`+`blur-2xl` เรนเดอร์จริง** · *(works=thumbnail YouTube 16/9 คงเดิม cover · album grid/cover ยังไม่เปลี่ยน — ถ้าต้องการค่อยขยาย)*
+- [x] **เกี่ยวกับ** `/about` — hardcode + ดึง SiteSetting บางส่วน ✅
+  - [x] PageHero + intro (site.name/tagline จาก SiteSetting) + การ์ด ปรัชญา/วิสัยทัศน์/พันธกิจ (ข้อความทั่วไป **ไม่ปั้นตัวเลข/ข้อเท็จจริงปลอม**) + CTA ติดต่อ · verify 200
+- [x] **ติดต่อ** `/contact` — ฟอร์ม (สร้าง ContactMessage) + Google Map embed + ข้อมูลติดต่อ ✅
+  - [x] `lib/validations/contact.ts` + **`submitContactMessage` (public — ไม่ต้องล็อกอิน)** ใน `server/actions/contact-message.ts` (ฝั่ง submit ที่เลื่อนมาจาก 4.4.12) · `components/public/contact-form` (RHF + `standardSchemaResolver` · **inline success state** ไม่พึ่ง Toaster ที่ public layout ยังไม่มี)
+  - [x] `/contact` — การ์ดข้อมูลติดต่อ (contact.address/phone/email/hours จาก SiteSetting) + map (`mapEmbedSrc` ยอมเฉพาะ google.com https) + ฟอร์ม · โทร/เมล เป็น `tel:`/`mailto:`
+  - [x] ✅ verify (tsc+lint · HTTP `:4000`): `/contact`=200 (ฟอร์ม+map iframe) · 🔒 **ยิง `submitContactMessage` ตรง (Next-Action id, token ASCII):** valid→`ok:true` row เข้า inbox unread · **invalid (email เสีย/ข้อความว่าง)→`ok:false`+`fieldErrors` 0 row** (positive+negative control) · ล้างข้อมูลทดสอบแล้ว · ⚠️ rate-limit ยกไป 4.8
+  - [x] ✅ **ทดสอบคลิกจริงแล้ว (เจ้าของ 2026-07-21):** กรอกฟอร์มส่ง→success card · error ตรงช่อง *(map แสดงเมื่อตั้ง SiteSetting `map.embed`)*
+- [x] ✅ verify: ทุกหน้าเปิดได้ มี 4 states, mobile ใช้งานได้ — **ทุกหน้า public เปิด 200 + logic/action ผ่าน HTTP + เจ้าของคลิกทดสอบรวมแล้ว (2026-07-21)** · *(ยกไป Phase 4.8: `error.tsx`/`loading.tsx`/`not-found.tsx` ต่อ route group)*
+  > 🔧 **แก้ตอนเจ้าของทดสอบ (2026-07-21):** "อัลบั้มภาพ" ไม่มีในเมนูหลัก desktop (อยู่ใน `publicNavExtra` = drawer มือถือเท่านั้น) → **ย้ายขึ้น `publicNav`** ถัดจาก "ผลงาน/สื่อ" (เอาออกจาก extra กันซ้ำ) · เมนูหลักตอนนี้ 7 อัน · documents/admission ยังอยู่ใน drawer + quick-links (ถ้าจะขึ้นเมนูหลักด้วย → ทำ dropdown "เพิ่มเติม")
 
 ---
 

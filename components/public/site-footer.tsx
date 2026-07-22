@@ -6,12 +6,12 @@ import { getSiteSettings } from "@/lib/site-settings-data";
 const MENU_MAIN = [
   { href: "/news", label: "ข่าวสาร" },
   { href: "/works", label: "ผลงาน / สื่อการสอน" },
+  { href: "/albums", label: "อัลบั้มภาพ" },
   { href: "/calendar", label: "ปฏิทินกิจกรรม" },
   { href: "/staff", label: "ทำเนียบบุคลากร" },
 ];
 const MENU_INFO = [
   { href: "/about", label: "เกี่ยวกับโรงเรียน" },
-  { href: "/admission", label: "การรับสมัคร" },
   { href: "/documents", label: "ดาวน์โหลดเอกสาร" },
   { href: "/contact", label: "ติดต่อเรา" },
 ];

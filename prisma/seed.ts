@@ -57,9 +57,8 @@ async function seedCategories() {
 }
 
 // หน้าเนื้อหาตั้งต้น — สร้างเป็น DRAFT + เนื้อหา placeholder ให้แอดมินเข้าไปแก้ (Phase 4.4.10)
-// slug ตรงกับ route หน้า public (Phase 4.6): /admission อ่าน 'admission' · ที่เหลือที่ /[slug]
+// slug ตรงกับ route หน้า public (Phase 4.6) ที่ /[slug] · (ตัด 'admission' ออก — โรงเรียนไม่มีการรับสมัคร)
 const pages = [
-  { slug: "admission", title: "การรับสมัครนักเรียน" },
   { slug: "regulations", title: "ระเบียบโรงเรียน" },
   { slug: "curriculum", title: "หลักสูตร" },
 ];

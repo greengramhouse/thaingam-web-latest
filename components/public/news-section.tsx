@@ -1,26 +1,11 @@
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
-import { ArrowRight, ChevronRight, ImageOff } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import type { NewsCardData } from "@/components/public/news-card";
+import { CoverImage } from "@/components/public/cover-image";
+import { formatThaiDate } from "@/lib/date";
 
 function newsDate(n: NewsCardData) {
-  return format(n.publishedAt ?? n.createdAt, "d MMM yyyy", { locale: th });
-}
-
-function Cover({ src, ratio }: { src: string | null; ratio: string }) {
-  return (
-    <div className={`relative ${ratio} overflow-hidden bg-muted`}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
-        <img src={src} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
-      ) : (
-        <div className="flex size-full items-center justify-center text-muted-foreground">
-          <ImageOff className="size-8" aria-hidden="true" />
-        </div>
-      )}
-    </div>
-  );
+  return formatThaiDate(n.publishedAt ?? n.createdAt, "medium");
 }
 
 export function NewsSection({ items }: { items: NewsCardData[] }) {
@@ -50,7 +35,7 @@ export function NewsSection({ items }: { items: NewsCardData[] }) {
           href={`/news/${featured.slug}`}
           className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:col-span-2 lg:col-span-1 lg:row-span-2"
         >
-          <Cover src={featured.coverImage} ratio="aspect-[16/10]" />
+          <CoverImage src={featured.coverImage} ratio="aspect-[16/10]" hover />
           <div className="flex flex-1 flex-col p-5 sm:p-[22px]">
             <div className="mb-3 flex items-center gap-2">
               {featured.category && (
@@ -80,7 +65,7 @@ export function NewsSection({ items }: { items: NewsCardData[] }) {
             href={`/news/${n.slug}`}
             className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
-            <Cover src={n.coverImage} ratio="aspect-[16/9]" />
+            <CoverImage src={n.coverImage} ratio="aspect-[16/9]" hover />
             <div className="p-4">
               <div className="mb-2 flex items-center gap-2">
                 {n.category && (

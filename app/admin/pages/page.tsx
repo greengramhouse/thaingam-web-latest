@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 import { Plus } from "lucide-react";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ export default async function AdminPagesPage({
     <>
       <PageHeader
         title="หน้าเนื้อหา"
-        description="หน้าคงที่ที่แก้ผ่านแอดมิน เช่น การรับสมัคร ระเบียบ หลักสูตร"
+        description="หน้าคงที่ที่แก้ผ่านแอดมิน เช่น ระเบียบ หลักสูตร ประวัติโรงเรียน"
         action={
           <Button nativeButton={false} render={<Link href="/admin/pages/new" />}>
             <Plus aria-hidden="true" />
@@ -129,7 +128,7 @@ export default async function AdminPagesPage({
                         {item.author?.name ?? <span className="text-muted-foreground">—</span>}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                        {format(item.updatedAt, "d MMM yy", { locale: th })}
+                        {formatThaiDate(item.updatedAt, "short")}
                       </TableCell>
                       <TableCell>
                         <PageRowActions id={item.id} label={`“${item.title}”`} published={item.status === "PUBLISHED"} />

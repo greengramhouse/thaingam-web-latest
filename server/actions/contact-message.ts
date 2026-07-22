@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { canManageContent, getCurrentUser } from "@/lib/rbac";
+import { contactFormSchema } from "@/lib/validations/contact";
 import type { ActionResult } from "@/server/actions/types";
 
 async function requireContentManager() {
@@ -13,6 +14,36 @@ async function requireContentManager() {
 
 function revalidateMessages() {
   revalidatePath("/admin/messages");
+}
+
+/**
+ * ส่งข้อความจากหน้า "ติดต่อเรา" (สาธารณะ — ไม่ต้องล็อกอิน) → สร้าง ContactMessage เข้า inbox แอดมิน
+ * ⚠️ rate-limit / กันสแปม ยกไปทำที่ Phase 4.8 (security)
+ */
+export async function submitContactMessage(input: unknown): Promise<ActionResult> {
+  const parsed = contactFormSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "ข้อมูลไม่ถูกต้อง", fieldErrors: parsed.error.flatten().fieldErrors };
+  }
+  const data = parsed.data;
+
+  try {
+    const created = await prisma.contactMessage.create({
+      data: {
+        name: data.name,
+        email: data.email,
+        phone: data.phone || null,
+        subject: data.subject || null,
+        message: data.message,
+      },
+      select: { id: true },
+    });
+    revalidateMessages();
+    return { ok: true, id: created.id };
+  } catch (error) {
+    console.error("submitContactMessage failed:", error);
+    return { ok: false, error: "ส่งข้อความไม่สำเร็จ กรุณาลองใหม่" };
+  }
 }
 
 /** ตั้งสถานะอ่าน/ยังไม่อ่าน — auto-mark ตอนเปิดอ่าน (read=true) หรือปุ่มสลับในลิสต์ */

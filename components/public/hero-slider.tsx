@@ -20,7 +20,7 @@ export function HeroSlider({ banners }: { banners: HeroBanner[] }) {
   // ไม่มีแบนเนอร์ → กล่อง placeholder อมคราม
   if (count === 0) {
     return (
-      <div className="flex aspect-[4/3] w-full items-center justify-center rounded-[20px] bg-white/10 text-center text-sm text-white/70 shadow-2xl ring-1 ring-white/15">
+      <div className="flex aspect-video w-full items-center justify-center rounded-[20px] bg-white/10 text-center text-sm text-white/70 shadow-2xl ring-1 ring-white/15 lg:aspect-[4/3]">
         ภาพกิจกรรม/อาคารเรียน
         <br />
         (เพิ่มได้ที่เมนู “แบนเนอร์หน้าแรก”)
@@ -36,7 +36,7 @@ export function HeroSlider({ banners }: { banners: HeroBanner[] }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-[20px] shadow-2xl ring-1 ring-white/15">
+      <div className="aspect-video w-full overflow-hidden rounded-[20px] shadow-2xl ring-1 ring-white/15 lg:aspect-[4/3]">
         {current.linkUrl ? <Link href={current.linkUrl}>{img}</Link> : img}
       </div>
       {count > 1 && (

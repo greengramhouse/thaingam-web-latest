@@ -8,7 +8,7 @@
 
 เว็บไซต์ประชาสัมพันธ์ + ระบบจัดการข้อมูลหลังบ้าน สำหรับ **"โรงเรียนชุมชนวัดไทยงาม"** ประกอบด้วย 2 ส่วนหลัก:
 
-1. **Public Website** — สำหรับบุคคลทั่วไป ครู เจ้าหน้าที่ ผู้ปกครอง นักเรียน เข้ามาดูข่าวสาร ผลงาน/สื่อการสอน ปฏิทินกิจกรรม ข้อมูลวิชาการ การรับสมัคร และข้อมูลโรงเรียน
+1. **Public Website** — สำหรับบุคคลทั่วไป ครู เจ้าหน้าที่ ผู้ปกครอง นักเรียน เข้ามาดูข่าวสาร ผลงาน/สื่อการสอน ปฏิทินกิจกรรม ข้อมูลวิชาการ และข้อมูลโรงเรียน *(ไม่มีการรับสมัครนักเรียน — ตัดออก 2026-07-21)*
 2. **Admin Backoffice** — ระบบหลังบ้านมีความปลอดภัย ให้ผู้ดูแลจัดการข้อมูล (CRUD) ทั้งหมด
 
 **ภาษา:** ไทยอย่างเดียว (ไม่ทำ i18n)
@@ -245,7 +245,7 @@ model Staff {
 
 model Page {
   id        String        @id @default(cuid())
-  slug      String        @unique // 'regulations' | 'admission' | 'curriculum' ...
+  slug      String        @unique // 'regulations' | 'curriculum' ... (ไม่มี 'admission')
   title     String
   content   String        // rich text
   status    PublishStatus @default(PUBLISHED)
@@ -390,7 +390,7 @@ Thaingam-web/
 │   │   │   └── [slug]/page.tsx
 │   │   ├── documents/page.tsx       # ศูนย์ดาวน์โหลดเอกสาร
 │   │   ├── staff/page.tsx           # ทำเนียบบุคลากร
-│   │   ├── admission/page.tsx       # การรับสมัคร (Page DB)
+│   │   ├── [slug]/page.tsx          # หน้าเนื้อหาจาก Page DB (ระเบียบ/หลักสูตร ฯลฯ)
 │   │   ├── about/page.tsx           # เกี่ยวกับโรงเรียน
 │   │   ├── contact/page.tsx         # ติดต่อ + ฟอร์ม + Google Map
 │   │   ├── search/page.tsx          # ค้นหาทั่วเว็บ
@@ -442,7 +442,7 @@ Thaingam-web/
 - **Admin** — `Sidebar` (เมนูตาม role, ซ่อน users/settings สำหรับ non-SUPER_ADMIN), `Topbar` (user + logout)
 - **Auth** — เรียบ กลางจอ
 
-**หน้าแรก (sections):** Hero Slider (Banner) → แถบประกาศด่วน → ข่าวเด่น → ข่าวล่าสุด → ผลงานเด่น → กิจกรรมเร็ว ๆ นี้ → CTA รับสมัคร → Footer
+**หน้าแรก (sections):** Hero Slider (Banner) → แถบประกาศด่วน → ข่าวเด่น → ข่าวล่าสุด → ผลงานเด่น → กิจกรรมเร็ว ๆ นี้ → CTA ติดตามข่าวสาร → Footer
 
 **shadcn/ui ที่ต้องติดตั้ง:**
 `button` `input` `textarea` `label` `form` `card` `dialog` `dropdown-menu` `select` `table` `badge` `avatar` `tabs` `sheet` `sonner` `alert-dialog` `skeleton` `separator` `switch` `checkbox` `popover` `calendar` `pagination` `tooltip` `navigation-menu` `scroll-area` `command`
@@ -478,7 +478,7 @@ Thaingam-web/
 | 3 | **Auth** | Better Auth config (Email/Password; reset email เลื่อนตอนมี creds — Google OAuth ยกเลิกแล้ว), role, `proxy.ts` *(เดิม middleware.ts)*, seed SUPER_ADMIN |
 | 4 | **Admin shell** | layout (Sidebar/Topbar ตาม role), Dashboard, RBAC helper, RichTextEditor, ImageUrlInput, DataTable |
 | 5 | **Admin CRUD** | News → Categories/Tags → MediaWork → Events → Staff → Albums/Photos → Documents → Banners → Announcements → Pages → SiteSettings → Messages → Users *(ADMIN+ จัดการเนื้อหาทั้งหมด, Users เฉพาะ SUPER_ADMIN)* |
-| 6 | **Public site** | Navbar/Footer, หน้าแรก, news, works (+YouTube), calendar, albums (+like), documents, staff, admission/pages, about, contact (form + Map) |
+| 6 | **Public site** | Navbar/Footer, หน้าแรก, news, works (+YouTube), calendar, albums (+like), documents, staff, pages(`/[slug]`), about, contact (form + Map) |
 | 7 | **Search + SEO** | `/search`, metadata, sitemap, robots, JSON-LD |
 | 8 | **Polish** | loading/skeleton, 404, empty states, responsive, ธีมสี |
 

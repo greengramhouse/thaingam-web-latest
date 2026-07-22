@@ -62,13 +62,13 @@ export function PageForm({ page }: { page?: PageFormValues & { id: string } }) {
           <CardContent className="flex flex-col gap-4 pt-6">
             <div className="flex flex-col gap-2">
               <Label htmlFor="title">ชื่อหน้า</Label>
-              <Input id="title" placeholder="เช่น การรับสมัครนักเรียน" aria-invalid={!!errors.title} {...register("title")} />
+              <Input id="title" placeholder="เช่น ระเบียบการแต่งกาย" aria-invalid={!!errors.title} {...register("title")} />
               {errors.title && <p className="text-sm text-destructive">{errors.title.message}</p>}
             </div>
 
             <div className="flex flex-col gap-2">
               <Label htmlFor="slug">slug (ส่วนท้าย URL)</Label>
-              <Input id="slug" placeholder="admission" aria-invalid={!!errors.slug} {...register("slug")} />
+              <Input id="slug" placeholder="regulations" aria-invalid={!!errors.slug} {...register("slug")} />
               <p className="text-xs text-muted-foreground">อังกฤษพิมพ์เล็ก ตัวเลข และ - เท่านั้น · จะได้ URL: /slug-ที่กรอก</p>
               {errors.slug && <p className="text-sm text-destructive">{errors.slug.message}</p>}
             </div>

@@ -93,7 +93,7 @@ export function BannerForm({
               <Label htmlFor="title">ชื่อ / คำบรรยาย</Label>
               <Input
                 id="title"
-                placeholder="เช่น เปิดรับสมัครนักเรียนใหม่ 2568"
+                placeholder="เช่น กิจกรรมกีฬาสีประจำปี 2568"
                 aria-invalid={!!errors.title}
                 {...register("title")}
               />

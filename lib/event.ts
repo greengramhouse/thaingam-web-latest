@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 
 /**
  * Date helpers ของกิจกรรม — pure ใช้ได้ทั้ง client (ฟอร์ม/validation) และ server (action)
@@ -39,7 +39,6 @@ export function parseEventDateInput(value: string | null | undefined, allDay: bo
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-const DATE_FMT = "d MMM yy"; // 20 ก.ค. 69
 const TIME_FMT = "HH:mm";
 
 function sameCalendarDay(a: Date, b: Date): boolean {
@@ -47,24 +46,23 @@ function sameCalendarDay(a: Date, b: Date): boolean {
 }
 
 /**
- * รูปแบบช่วงเวลาที่อ่านง่ายสำหรับตาราง/การ์ด (ภาษาไทย) — reuse ได้ที่หน้า public/ปฏิทินภายหลัง
+ * รูปแบบช่วงเวลาที่อ่านง่ายสำหรับตาราง/การ์ด (ภาษาไทย พ.ศ.) — reuse ที่หน้า public/ปฏิทิน
  * ตัวอย่าง:
- *   allDay วันเดียว        → "20 ก.ค. 69"
- *   allDay ข้ามวัน         → "20 – 22 ก.ค. 69"
- *   มีเวลา วันเดียว        → "20 ก.ค. 69 09:00–12:00 น."
- *   มีเวลา ข้ามวัน         → "20 ก.ค. 69 09:00 น. – 22 ก.ค. 69 15:00 น."
+ *   allDay วันเดียว        → "20 ก.ค. 68"
+ *   allDay ข้ามวัน         → "20 – 22 ก.ค. 68"
+ *   มีเวลา วันเดียว        → "20 ก.ค. 68 09:00–12:00 น."
+ *   มีเวลา ข้ามวัน         → "20 ก.ค. 68 09:00 น. – 22 ก.ค. 68 15:00 น."
  */
 export function formatEventRange(
   startDate: Date,
   endDate: Date | null | undefined,
   allDay: boolean,
 ): string {
-  const startDay = format(startDate, DATE_FMT, { locale: th });
+  const startDay = formatThaiDate(startDate, "short");
 
   if (allDay) {
     if (!endDate || sameCalendarDay(startDate, endDate)) return startDay;
-    const endDay = format(endDate, DATE_FMT, { locale: th });
-    return `${startDay} – ${endDay}`;
+    return `${startDay} – ${formatThaiDate(endDate, "short")}`;
   }
 
   const startTime = format(startDate, TIME_FMT);
@@ -73,5 +71,5 @@ export function formatEventRange(
   if (sameCalendarDay(startDate, endDate)) {
     return `${startDay} ${startTime}–${format(endDate, TIME_FMT)} น.`;
   }
-  return `${startDay} ${startTime} น. – ${format(endDate, DATE_FMT, { locale: th })} ${format(endDate, TIME_FMT)} น.`;
+  return `${startDay} ${startTime} น. – ${formatThaiDate(endDate, "short")} ${format(endDate, TIME_FMT)} น.`;
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDate } from "@/lib/date";
 import { Plus } from "lucide-react";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { Badge } from "@/components/ui/badge";
@@ -142,7 +141,7 @@ export default async function AdminUsersPage({
                           )}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell text-sm text-muted-foreground">
-                          {format(u.createdAt, "d MMM yy", { locale: th })}
+                          {formatThaiDate(u.createdAt, "short")}
                         </TableCell>
                         <TableCell>
                           <UserRowActions

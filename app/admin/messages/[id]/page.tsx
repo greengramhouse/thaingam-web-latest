@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { format } from "date-fns";
-import { th } from "date-fns/locale";
+import { formatThaiDateTime } from "@/lib/date";
 import { ArrowLeft, Mail, Phone, Reply } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -55,7 +54,7 @@ export default async function MessageDetailPage({ params }: { params: Promise<{ 
               </a>
             )}
             <span className="text-xs text-muted-foreground">
-              ส่งเมื่อ {format(message.createdAt, "d MMM yyyy HH:mm", { locale: th })} น.
+              ส่งเมื่อ {formatThaiDateTime(message.createdAt, "medium")} น.
             </span>
           </div>
           <MessageDetailActions id={message.id} isRead={message.isRead} />

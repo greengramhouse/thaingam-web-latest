@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { GraduationCap, CalendarDays, FolderDown, UsersRound } from "lucide-react";
+import { Images, CalendarDays, FolderDown, UsersRound } from "lucide-react";
 
 const LINKS = [
-  { href: "/admission", title: "การรับสมัคร", subtitle: "ปีการศึกษาใหม่", Icon: GraduationCap, tint: "bg-secondary text-primary" },
+  { href: "/albums", title: "อัลบั้มภาพ", subtitle: "ภาพกิจกรรม", Icon: Images, tint: "bg-secondary text-primary" },
   { href: "/calendar", title: "ปฏิทินกิจกรรม", subtitle: "กิจกรรมทั้งปี", Icon: CalendarDays, tint: "bg-sky-muted text-sky-foreground" },
   { href: "/documents", title: "ดาวน์โหลดเอกสาร", subtitle: "แบบฟอร์ม · ประกาศ", Icon: FolderDown, tint: "bg-mint-muted text-mint-foreground" },
   { href: "/staff", title: "ทำเนียบบุคลากร", subtitle: "คณะครูและบุคลากร", Icon: UsersRound, tint: "bg-secondary text-primary" },

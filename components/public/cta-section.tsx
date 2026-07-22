@@ -9,25 +9,25 @@ export function CtaSection() {
         <div className="relative flex flex-wrap items-center justify-between gap-8">
           <div className="max-w-xl">
             <h2 className="mb-3 text-2xl font-bold tracking-tight sm:text-[30px]">
-              พร้อมเปิดรับนักเรียนใหม่ ปีการศึกษาใหม่
+              ติดตามข่าวสารและกิจกรรมของเรา
             </h2>
             <p className="text-base leading-relaxed text-white/80">
-              ร่วมเป็นส่วนหนึ่งของครอบครัวไทยงาม ที่พร้อมพัฒนาลูกหลานของท่านให้เป็นคนดี เก่ง และมีความสุข
+              ร่วมเป็นส่วนหนึ่งของครอบครัวไทยงาม ติดตามความเคลื่อนไหว กิจกรรม และผลงานของนักเรียนได้ที่นี่
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/admission"
+              href="/news"
               className="inline-flex h-12 items-center gap-2 rounded-xl bg-white px-6 text-[15px] font-semibold text-primary transition-colors hover:bg-white/90"
             >
-              สมัครเรียน
+              ดูข่าวสาร
               <ArrowRight className="size-[18px]" aria-hidden="true" />
             </Link>
             <Link
               href="/contact"
               className="inline-flex h-12 items-center rounded-xl border border-white/25 bg-white/12 px-6 text-[15px] font-semibold text-white transition-colors hover:bg-white/20"
             >
-              สอบถามข้อมูล
+              ติดต่อเรา
             </Link>
           </div>
         </div>
