@@ -1,0 +1,27 @@
+# Caddy จะขอ/ต่ออายุใบรับรอง HTTPS ให้อัตโนมัติ (ต้องชี้ DNS ของโดเมนมาที่ IP ของ VPS ก่อน)
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# ส่งต่อไปที่ container ของแอป (ชื่อ service ใน compose)
+	reverse_proxy app:3000 {
+		# ⚠️ rate limit ของฟอร์มติดต่อ/ปุ่มไลก์อ่าน IP จาก X-Forwarded-For
+		#    Caddy เขียน header นี้ให้เองอยู่แล้ว — อย่าไปตั้งทับด้วยค่าจาก client
+		header_up X-Real-IP {remote_host}
+	}
+
+	header {
+		# กัน MIME sniffing + clickjacking + ส่ง referrer เท่าที่จำเป็น
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		# บอกเบราว์เซอร์ให้ใช้ https อย่างเดียว (เปิดหลังยืนยันว่า HTTPS ใช้ได้จริงแล้ว)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

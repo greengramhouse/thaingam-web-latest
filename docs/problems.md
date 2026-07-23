@@ -474,3 +474,18 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
 - ⚠️ **มีผลกับแผน deploy (roadmap 4.8):** GitHub Actions ที่ `docker build` บน runner **ไม่มี DB** → build พังทันที
   ทางเลือก: (1) ให้ runner ต่อ DB ได้ (2) ยกหน้าที่ query DB เป็น dynamic (`force-dynamic`) (3) build ในเครือข่ายเดียวกับ DB บน VPS
 - ไม่ใช่ของใหม่จาก Phase 4.7 — เป็นแบบนี้มาตั้งแต่มีหน้า public ที่ query DB (4.5/4.6) เพิ่งมาเจอตอนลองรัน build จริง
+
+### 8.7 🐳 Docker + pnpm + Prisma — 3 กับดักที่เจอตอนทำ image (2026-07-23)
+
+1. **`COPY --from=builder /app/node_modules/prisma` แล้วรันไม่ได้** → `MODULE_NOT_FOUND`
+   pnpm เก็บของจริงไว้ใน `node_modules/.pnpm/…` แล้วทำ symlink → copy เฉพาะโฟลเดอร์เดียวได้แต่เปลือก
+   ✅ แก้: stage แยก (`prisma-cli`) ลง CLI ใหม่ในโฟลเดอร์ของตัวเอง (`/opt/tools`) แล้ว copy ทั้งก้อน
+   · อ่าน**เวอร์ชันที่ติดตั้งจริง** (`require('/app/node_modules/prisma/package.json').version`) ไม่ใช่ช่วง `^7.x` ใน `package.json` — ไม่งั้น CLI คนละรุ่นกับ client
+2. **`pnpm add` ในโฟลเดอร์ใหม่ล้มด้วย `ERR_PNPM_IGNORED_BUILDS`** (prisma/esbuild ต้องรัน postinstall)
+   ✅ ต้องมี `pnpm-workspace.yaml` ที่มี `allowBuilds:` ในโฟลเดอร์นั้นด้วย · และ **อย่าใช้ `pnpm init`** — มันเขียน
+   `devEngines.packageManager: "^11.x"` ซึ่ง corepack ปฏิเสธ (`expected a semver version`) → เขียน `package.json` เองสั้น ๆ
+3. **`prisma.config.ts` `import "dotenv/config"` แต่ `.next/standalone/node_modules` ไม่มี dotenv**
+   (Next trace เฉพาะ dependency ที่แอปใช้จริง) → `migrate deploy` ล้ม
+   ✅ แก้ที่ entrypoint: `export NODE_PATH=/opt/tools/node_modules`
+4. 📌 **seed รันใน image ไม่ได้** — `prisma/seed.ts` `import "@/lib/auth"` = source จริง ซึ่ง standalone ไม่มี (มีแต่โค้ดที่ build แล้ว)
+   ✅ ทำครั้งเดียวจากเครื่องผู้ดูแลผ่าน **SSH tunnel** เข้า Postgres ของ VPS แทน (docs/deploy.md §4)

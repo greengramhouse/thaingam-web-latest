@@ -11,6 +11,10 @@ import { TableSearch } from "@/components/admin/table-search";
 import { PublicPagination } from "@/components/public/public-pagination";
 import { ListSkeleton } from "@/components/public/list-skeleton";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = {
   title: "ข่าวประชาสัมพันธ์",
   description: "ข่าวสาร กิจกรรม และประกาศต่าง ๆ ของโรงเรียนชุมชนวัดไทยงาม",

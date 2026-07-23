@@ -589,7 +589,23 @@
         > ⚠️ **ข้อจำกัดที่ต้องรู้:** นับใน memory ของ process → restart แล้วเริ่มใหม่ · หลาย container จะนับแยกกัน (แผน deploy = 1 container จึงพอ · ถ้า scale ค่อยเปลี่ยนไป Redis แก้แค่ไฟล์นี้)
         > ⚠️ `X-Forwarded-For` ปลอมได้ถ้าไม่มี proxy หน้าเว็บ — แผน deploy มี Caddy ซึ่งเขียน header นี้ให้เอง
   - [x] ตรวจ RBAC ทุก Server Action — ทำไปแล้วราย module ใน 4.4 (ทุก action gate + ทดสอบยิงตรง + positive control ครบทุกโมดูล)
-- [ ] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — เปลี่ยนแผนจาก Vercel/Neon (ตัดสินใจ 2026-07-22)
+- [~] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — เปลี่ยนแผนจาก Vercel/Neon (ตัดสินใจ 2026-07-22)
+  > ✅ **ไฟล์ครบแล้ว + ทดสอบ image จริงบนเครื่อง (2026-07-23)** — ขั้นตอนลงมือทั้งหมดอยู่ที่ **[`docs/deploy.md`](./deploy.md)**
+  > **เจ้าของเคาะแล้ว:** Postgres = container ใน compose · build บน GitHub Actions → GHCR · **VPS + โดเมนพร้อมแล้ว** · reverse proxy รอผลตรวจว่าเครื่องมี nginx/caddy อยู่เดิมหรือไม่
+  > **ทำแล้ว:** `next.config.ts` (`output:"standalone"`) · `Dockerfile` (deps→builder→prisma-cli→runner) · `.dockerignore` · `docker-compose.yml` · `docker-compose.caddy.yml` (แยกออกมา เผื่อเครื่องมี proxy เดิม) · `Caddyfile` · `docker-entrypoint.sh` · `.github/workflows/deploy.yml` · `.env.production.example`
+  > **🔥 ปลดล็อกปัญหาใหญ่: `next build` ไม่ต้องมี DB แล้ว** — ทำหน้า public ทั้งหมดเป็น `force-dynamic`
+  >   → **พิสูจน์แล้ว: `docker stop` DB แล้ว `pnpm build` ผ่าน 31/31 หน้า** (ก่อนแก้ = พังที่ `/about` ทันที) ⇒ GitHub runner build ได้โดยไม่ต้องต่อ DB
+  > **✅ verify ที่ทำจริง:** `docker build` ผ่าน → รัน container ต่อ DB จริง → **entrypoint รัน `prisma migrate deploy` สำเร็จ (15 migrations, no pending)** →
+  >   หน้าเว็บใน container ตอบ `/`=200 `/news`=200 `/news/[slug]`=200 `/sitemap.xml`=200 `/og.png`=200 · `/admin`=307 · slug มั่ว=**404** ·
+  >   **`NEXT_PUBLIC_SITE_URL` ที่ส่งเป็น build arg โผล่ใน sitemap/og:url จริง** · `docker compose config` ผ่านทั้งชุดปกติและชุด +Caddy · image 602 MB
+  > **🐛 2 กับดักที่เจอตอนทดสอบ image (แก้แล้ว):**
+  >   1. **copy `node_modules/prisma` จาก builder มาใช้ไม่ได้** — pnpm เก็บของจริงใน `.pnpm/` แล้ว symlink → รันแล้ว `MODULE_NOT_FOUND`
+  >      → เพิ่ม stage `prisma-cli` ลง CLI ใหม่ที่ `/opt/tools` (อ่านเวอร์ชันที่ติดตั้งจริงจาก stage `deps` ให้ตรงกับ client เป๊ะ)
+  >      · ต้องเขียน `pnpm-workspace.yaml` (`allowBuilds`) ในโฟลเดอร์นั้นด้วย ไม่งั้น `ERR_PNPM_IGNORED_BUILDS` · และห้ามใช้ `pnpm init` (ใส่ `devEngines` ที่ corepack ปฏิเสธ)
+  >   2. **`prisma.config.ts` `import "dotenv/config"` แต่ standalone ไม่มี dotenv** → entrypoint ตั้ง `NODE_PATH=/opt/tools/node_modules`
+  > **📌 seed ครั้งแรกทำจากเครื่องผู้ดูแลผ่าน SSH tunnel** — `prisma/seed.ts` import `@/lib/auth` (source) ซึ่งไม่มีใน image → ถอด `RUN_SEED` ออกจาก entrypoint
+  >   แล้วเปิดพอร์ต db ที่ `127.0.0.1:5433` ของ VPS ไว้แทน (เข้าจากอินเทอร์เน็ตไม่ได้) · ขั้นตอนอยู่ใน deploy.md §4
+  > ⏸️ **เหลือทำตอนลงเครื่องจริง:** ตั้ง GitHub Secrets · คัดลอก compose/.env ขึ้น VPS · ตัดสินใจเรื่อง proxy · deploy ครั้งแรก + seed แอดมิน
   > **สถาปัตยกรรม:** VPS 1 เครื่อง รัน `docker compose` 3 service → `caddy` (reverse proxy + auto HTTPS) → `app` (Next standalone :3000) → `db` (Postgres + named volume + backup pg_dump)
   > **Flow CI/CD:** push `main` → GitHub Actions `docker build` → push image ขึ้น **GHCR** → SSH เข้า VPS `compose pull && up -d` → `prisma migrate deploy` · build บน runner (ไม่กิน RAM/CPU ของ VPS) · pin image tag ไว้ rollback ได้
   > **ไฟล์ที่ต้องเพิ่ม/แก้:** `next.config.ts` (เพิ่ม `output: "standalone"`) · `Dockerfile` (multi-stage deps→build→runner) · `.dockerignore` · `docker-compose.yml` · `Caddyfile` · `docker-entrypoint.sh` (migrate deploy ก่อน start) · `.github/workflows/deploy.yml` · `.env.production.example`

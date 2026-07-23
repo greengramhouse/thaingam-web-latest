@@ -1,0 +1,26 @@
+# ชั้น reverse proxy + HTTPS อัตโนมัติ — ใช้ **เฉพาะเมื่อ VPS ยังไม่มี proxy ตัวอื่นอยู่**
+#
+#   docker compose -f docker-compose.yml -f docker-compose.caddy.yml up -d
+#
+# ถ้าเครื่องมี nginx/caddy รันอยู่แล้ว: ไม่ต้องใช้ไฟล์นี้ ให้ proxy เดิมชี้มาที่
+# 127.0.0.1:${APP_HOST_PORT:-3000} (docker-compose.yml เปิดพอร์ตนั้นไว้ที่ localhost แล้ว)
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data # ใบรับรอง Let's Encrypt (ห้ามลบ ไม่งั้นขอใหม่บ่อยจนโดน rate limit)
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

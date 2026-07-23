@@ -15,6 +15,10 @@ import { cloudinaryUrl } from "@/lib/image-url";
 import { articleJsonLd } from "@/lib/structured-data";
 import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 const getWork = cache(async (slug: string) => {
   return prisma.mediaWork.findFirst({
     where: { slug, status: "PUBLISHED" },

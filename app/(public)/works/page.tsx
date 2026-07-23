@@ -11,6 +11,10 @@ import { PageHero } from "@/components/public/page-hero";
 import { PublicPagination } from "@/components/public/public-pagination";
 import { ListSkeleton } from "@/components/public/list-skeleton";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = {
   title: "ผลงานและสื่อการสอน",
   description: "คลังสื่อการเรียนรู้ วิดีโอ และบทความจากคุณครูของโรงเรียนชุมชนวัดไทยงาม",

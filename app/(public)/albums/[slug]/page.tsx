@@ -10,6 +10,10 @@ import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import { AlbumLikeButton } from "@/components/public/album-like-button";
 import { PhotoGallery } from "@/components/public/photo-gallery";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 const getAlbum = cache(async (slug: string) => {
   return prisma.album.findFirst({
     where: { slug, status: "PUBLISHED" },

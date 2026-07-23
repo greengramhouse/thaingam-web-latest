@@ -14,6 +14,10 @@ import { JsonLd } from "@/components/public/json-ld";
 import { articleJsonLd } from "@/lib/structured-data";
 import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 /** ดึงข่าวที่เผยแพร่แล้วตาม slug — cache กัน query ซ้ำระหว่าง generateMetadata กับหน้า */
 const getNews = cache(async (slug: string) => {
   return prisma.news.findFirst({

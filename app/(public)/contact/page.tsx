@@ -3,6 +3,14 @@ import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import { getSiteSettings, mapEmbedSrc } from "@/lib/site-settings-data";
 import { ContactForm } from "@/components/public/contact-form";
 
+/**
+ * เรนเดอร์ตอนมี request เสมอ — ไม่ prerender ตอน build
+ * เหตุผล: หน้านี้ query DB → ถ้าปล่อยเป็น static จะ (1) build พังบน CI ที่ไม่มี DB
+ * (2) ข้อมูลค้างตั้งแต่วันที่ deploy จนกว่าจะ revalidate · ดู problems.md 8.6
+ */
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = {
   title: "ติดต่อเรา",
   description: "ช่องทางติดต่อโรงเรียนชุมชนวัดไทยงาม — ที่อยู่ โทรศัพท์ อีเมล และแบบฟอร์มติดต่อ",

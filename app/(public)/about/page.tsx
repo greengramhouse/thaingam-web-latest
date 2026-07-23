@@ -6,6 +6,14 @@ import { schoolJsonLd } from "@/lib/structured-data";
 import { PageHero } from "@/components/public/page-hero";
 import { JsonLd } from "@/components/public/json-ld";
 
+/**
+ * เรนเดอร์ตอนมี request เสมอ — ไม่ prerender ตอน build
+ * เหตุผล: หน้านี้ query DB → ถ้าปล่อยเป็น static จะ (1) build พังบน CI ที่ไม่มี DB
+ * (2) ข้อมูลค้างตั้งแต่วันที่ deploy จนกว่าจะ revalidate · ดู problems.md 8.6
+ */
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = {
   title: "เกี่ยวกับเรา",
   description: "แนะนำโรงเรียนชุมชนวัดไทยงาม ปรัชญา วิสัยทัศน์ และพันธกิจ",

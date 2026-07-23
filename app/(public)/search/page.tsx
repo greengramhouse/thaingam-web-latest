@@ -9,6 +9,10 @@ import { PageHero } from "@/components/public/page-hero";
 import { PublicPagination } from "@/components/public/public-pagination";
 import { SearchBox } from "@/components/public/search-box";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 export const metadata: Metadata = {
   title: "ค้นหา",
   description: "ค้นหาข่าวสาร ผลงาน/สื่อการสอน และหน้าข้อมูลของโรงเรียนชุมชนวัดไทยงาม",

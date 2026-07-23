@@ -8,6 +8,10 @@ import { excerptFromHtml } from "@/lib/text";
 import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import { PageHero } from "@/components/public/page-hero";
 
+/** เรนเดอร์ตอนมี request เสมอ — หน้านี้ query DB ห้าม prerender ตอน build (CI ไม่มี DB · problems.md 8.6) */
+export const dynamic = "force-dynamic";
+
+
 /**
  * หน้าเนื้อหาสถาบันจาก DB (`Page`) — ระเบียบ/หลักสูตร/ประวัติ ฯลฯ ที่แอดมินแก้เอง
  * dynamic route ท้ายสุด: folder ที่มีชื่อ (/news /works /staff …) match ก่อนเสมอ

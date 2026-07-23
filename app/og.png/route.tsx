@@ -20,11 +20,24 @@ import { OG_SIZE } from "@/lib/metadata";
 // รูปเปลี่ยนเฉพาะตอนแอดมินแก้ชื่อ/คำขวัญ → cache 1 ชม. พอ (ไม่ต้อง render ใหม่ทุกครั้งที่มีคนแชร์)
 export const revalidate = 3600;
 
+/**
+ * อ่านตั้งค่าเว็บแบบ "พังได้" — route นี้ถูก prerender ตอน build ซึ่ง **CI ไม่มี DB**
+ * (ดู problems.md 8.6) → ต่อ DB ไม่ได้ให้ใช้ค่าเริ่มต้นไปก่อน แล้วรอบ revalidate ถัดไปค่อยได้ค่าจริง
+ * ดีกว่าปล่อยให้ทั้ง build ล้มเพราะรูปแชร์รูปเดียว
+ */
+async function settingsOrDefaults(): Promise<Record<string, string>> {
+  try {
+    return await getSiteSettings();
+  } catch {
+    return {};
+  }
+}
+
 export async function GET() {
   const [font, logo, settings] = await Promise.all([
     readFile(join(process.cwd(), "assets/Anuphan-SemiBold.ttf")),
     readFile(join(process.cwd(), "public/logo.png"), "base64"),
-    getSiteSettings(),
+    settingsOrDefaults(),
   ]);
 
   const siteName = settings["site.name"] || "โรงเรียนชุมชนวัดไทยงาม";

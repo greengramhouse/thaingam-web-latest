@@ -8,11 +8,12 @@ import { absoluteUrl } from "@/lib/site-url";
  *
  * ⚠️ ไม่ใส่ `/search` (หน้าผลค้นหาไม่ควรถูก index) และไม่ใส่หน้าหลังบ้าน
  *
- * ⚠️ **ต้องมี `revalidate`** — route นี้ไม่ได้ใช้ request-time API เลย Next จึง prerender เป็น static
- * ตอน build (ยืนยันจาก build output: `○ /sitemap.xml`) → ถ้าไม่ตั้ง sitemap จะ **แช่แข็งตั้งแต่วันที่ deploy**
- * แอดมินโพสต์ข่าวใหม่แล้ว Google ไม่เห็น · 1 ชม. กำลังดี (ไม่ต้องยิง DB ทุกครั้งที่ crawler มาเก็บ)
+ * ⚠️ **ต้อง `force-dynamic`** — route นี้ไม่ได้ใช้ request-time API เลย Next จึง prerender เป็น static
+ * ตอน build (เห็นจาก build output `○ /sitemap.xml`) ซึ่งมีปัญหา 2 ข้อ:
+ * (1) build บน CI ที่ไม่มี DB จะพัง (problems.md 8.6) · (2) sitemap แช่แข็งตั้งแต่วันที่ deploy
+ * crawler มาเก็บไม่บ่อยอยู่แล้ว เรนเดอร์สดทุกครั้งจึงไม่หนัก
  */
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 /** หน้าคงที่ + น้ำหนักความสำคัญ */
 const STATIC_ROUTES: { path: string; priority: number; changeFrequency: "daily" | "weekly" | "monthly" }[] = [
