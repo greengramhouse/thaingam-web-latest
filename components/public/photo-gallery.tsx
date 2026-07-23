@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { cloudinaryUrl } from "@/lib/image-url";
 
 export type GalleryPhoto = { id: string; url: string; caption: string | null };
 
@@ -50,8 +51,11 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง */}
             <img
-              src={p.url}
+              // รูปย่อในกริดใช้ขนาดเล็ก — ตัวเต็มค่อยโหลดตอนเปิด lightbox
+              src={cloudinaryUrl(p.url, 400)}
               alt={p.caption ?? ""}
+              loading="lazy"
+              decoding="async"
               className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           </button>
@@ -104,8 +108,9 @@ export function PhotoGallery({ photos }: { photos: GalleryPhoto[] }) {
           <figure className="flex max-h-full max-w-4xl flex-col items-center gap-3" onClick={(e) => e.stopPropagation()}>
             {/* eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง */}
             <img
-              src={active.url}
+              src={cloudinaryUrl(active.url, 1600)}
               alt={active.caption ?? ""}
+              decoding="async"
               className="max-h-[80vh] w-auto rounded-lg object-contain"
             />
             <figcaption className="text-center text-sm text-white/80">

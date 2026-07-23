@@ -16,6 +16,7 @@ async function requireContentManager() {
 function revalidateWorks(slug?: string) {
   revalidatePath("/admin/works");
   revalidatePath("/works");
+  revalidatePath("/"); // หน้าแรกมีบล็อกผลงาน/สื่อ (Phase 4.5)
   if (slug) revalidatePath(`/works/${slug}`);
 }
 

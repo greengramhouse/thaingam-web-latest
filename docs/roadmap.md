@@ -535,14 +535,27 @@
 
 **เป้าหมาย:** ขัดเงา + ปล่อยจริง
 
-- [ ] Loading (`loading.tsx` + skeleton), `error.tsx`, `not-found.tsx` ครบทุก route group
-- [ ] Empty states ทุก list
-- [ ] ตรวจ responsive ทั้งเว็บ (mobile/tablet/desktop)
-- [ ] A11y: alt, focus, contrast, keyboard, aria
+- [x] **Loading / error / not-found ครบทุก route group** ✅ *(2026-07-23)*
+  - [x] `error.tsx` — ฝั่ง public (เต็มหน้า) + ฝั่ง admin (อยู่ในกรอบ AdminShell กดไปหน้าอื่นต่อได้) · ทั้งคู่ log ลง console + โชว์ `digest` **ไม่โชว์ `error.message`** (กันรั่วโครงสร้าง DB/พาธไฟล์)
+  - [x] `not-found.tsx` — public (มี Header/Footer + ปุ่มกลับหน้าแรก/ดูข่าว) · admin (“ไม่พบรายการนี้” สำหรับ id ที่ถูกลบ) · root (URL ลึกที่ไม่ match segment ไหน)
+  - [x] `global-error.tsx` — ตาข่ายชั้นสุดท้ายตอน root layout พัง · เรนเดอร์ `<html>/<body>` เอง + **inline style ล้วน** (CSS ถูก import ใน layout ที่พังไปแล้ว)
+  - [x] skeleton: `loading.tsx` ที่ `/admin` + segment public ที่ไม่มีหน้า detail (`/staff` `/documents` `/calendar` `/contact` `/about` `/search`)
+        · หน้าลิสต์ที่มี `[slug]` เป็นลูก (`/news` `/works` `/albums`) ใช้ **`<Suspense>` ในไฟล์หน้า** + `components/public/list-skeleton`
+  > 🔥 **เหตุผลที่ไม่วาง `loading.tsx` ครอบ route group (เจอตอนทำ):** `loading.tsx` = Suspense boundary → response กลายเป็น **streaming**
+  > → header ส่งไปก่อน เปลี่ยน status ไม่ได้ ⇒ **หน้าที่ `notFound()` ตอบ 200 แทน 404** (Next ใส่ `noindex` ให้แทน = soft 404)
+  > **วัดจริงสลับไปกลับ:** มี `(public)/loading.tsx` → `/mua-mua-slug` = **200** · ย้ายออก = **404** · เลือกคง 404 จริงไว้ (phase ก่อน ๆ verify ไว้แล้วว่าเป็น 404) · problems.md 5.12
+- [x] Empty states ทุก list — มีครบตั้งแต่ 4.4/4.6 (ข่าว/ผลงาน/อัลบั้ม/เอกสาร/บุคลากร/ค้นหา + ทุกตารางหลังบ้าน) ✅
+- [~] ตรวจ responsive ทั้งเว็บ — **public ผ่านแล้ว** (4.5 วัด overflow=0 ที่ 320/360/390/768px ด้วย CDP · 4.6 เจ้าของคลิกจริงทุกหน้า) · ⏸️ **หลังบ้านยังรอเจ้าของทดสอบบนมือถือ**
+- [~] A11y — [x] `lang="th"` · alt ครบ (รูปตกแต่งใช้ `alt=""` + `aria-hidden`) · ฟอร์มมี `<Label htmlFor>` + `aria-invalid` ครบ · `aria-current="page"` ที่เมนู public/admin · `aria-busy`/`sr-only` ที่ skeleton
+      · [x] **เพิ่มลิงก์ "ข้ามไปยังเนื้อหาหลัก"** (skip link) ทั้ง public + admin — โผล่เมื่อโฟกัสด้วยคีย์บอร์ด + `<main id>` เป็นเป้า
+      · ⏸️ contrast/keyboard nav เต็มรูปแบบ (ต้องใช้เครื่องมือวัดจริง เช่น axe) ยังไม่ได้ทำ
 - [x] **ธีมสี/ดีไซน์จริง (global tokens)** — ✅ **ลงแล้ว 2026-07-19 (เลื่อนมาทำก่อนกำหนด)** map สีแบรนด์จาก `DESIGN.md §2` เข้า `:root` ใน `app/globals.css` ครบทุก token (primary=คราม `#333D6D`, neutral อมคราม hue 274, ring=คราม, sidebar active=คราม, chart=แบรนด์+ฟ้า/มิ้นต์/เหลือง)
   > เดิม base color = `neutral` (chroma 0 เทาล้วน) → ตอนนี้เป็นสีแบรนด์แล้ว · **มีผลทั้งเว็บทันที รวมหน้า admin** → ⚠️ ต้องคลิกทดสอบหน้า admin ทุกหน้าว่าไม่มีสีเพี้ยน (ยังไม่ได้ทำ)
   > Lightning CSS (Turbopack) downlevel `oklch` → hex fallback ตอน serve (`--primary: #313969` ≈ `#333D6D`) — ปกติ ไม่ใช่บั๊ก
-  > ⏭️ ยังเหลือ: (1) เปลี่ยนหน้า auth จากสีฝัง hex → token (โค้ดสะอาดขึ้น ไม่เปลี่ยนหน้าตา) · (2) ฟอนต์ global `Inter/Anuphan` (ตอนนี้ auth ใช้แล้ว แต่ admin ยัง Noto)
+  > ✅ **(2) ฟอนต์ global เสร็จแล้ว (2026-07-23):** `--font-sans`/`--font-heading` + `body` ใน `globals.css` = `Inter → Anuphan → Noto Sans Thai (สำรอง)`
+  >    → **admin/auth/public ใช้ฟอนต์ชุดเดียวกันทั้งเว็บแล้ว** · ถอด inline `style` ฟอนต์ที่ `(public)/layout.tsx` ออก (ซ้ำซ้อน)
+  > ⏭️ ยังเหลือ: **(1) เปลี่ยนหน้า auth จากสีฝัง hex → token** — **ตั้งใจยังไม่ทำ** เป็นงาน cosmetic ล้วน แตะ ~20 จุด
+  >    และค่า token ไม่เท่ากับ hex เดิมเป๊ะ (`#F7F8FB` vs `--background`) → ต้องเทียบด้วยตาหลังแก้ ค่อยทำพร้อมรอบ QA ที่เจ้าของดูหน้าจอจริง
   > จุดเสียบ typography ของ Tiptap: class **`prose-editor`** ใน `components/admin/rich-text-editor.tsx` — ตอนนี้ยังไม่ได้นิยามที่ไหน (class เปล่า รอใส่ style ที่นี่)
 - [x] **Accent token (sky/mint/warning) เป็นตัวแปรกลาง** — ✅ **ลงแล้ว 2026-07-19** เพิ่ม `--sky/--mint/--warning` (+ `-foreground` + `-muted`) ใน `:root` + `.dark` และ map ใน `@theme inline` ของ `app/globals.css` → ใช้เป็น utility ได้ทันที (`bg-mint-muted`, `text-sky-foreground`, `bg-warning`, ฯลฯ)
   > **หลักการ:** สถานะ/หมวด/ไอคอนสถิติต่อจากนี้ **ใช้ token เหล่านี้ ไม่ hardcode hex** · `StatusBadge` ยกมาใช้ token แล้ว (มิ้นต์=เผยแพร่, เหลือง=ร่าง แบบ dot+tint ตาม DESIGN.md §4) → มีผลกับ list ข่าว/ผลงาน/กิจกรรม/อัลบั้มทั้งหมด (คลิกทดสอบ badge ให้ครบ)
@@ -551,7 +564,14 @@
   > `admin-shell.tsx` + `sidebar-nav.tsx`: Brand โลโก้ไทล์ (ไอคอน `School` เหมือน auth — ยังไม่มีไฟล์โลโก้ใน `public/`) · เมนู active = แถบครามซ้าย 3px + พื้นครามอ่อน · overline หัวกลุ่ม · topbar 60px + ปุ่ม "ดูเว็บไซต์" outline
   > ⚠️ **ตั้งใจต่างจาก mockup:** ไม่ใส่ badge เลข "3" ที่เมนูข้อความติดต่อ (ยังไม่มี `ContactMessage` — Phase 4.4.12 ค่อยนับจริง)
   > ✅ verify: tsc + eslint ผ่าน · รัน dev จริง → guest `/admin`=307, login seed=200, `/admin`(auth)=**200** เรนเดอร์ครบทุก section · utility สีใหม่ถูก generate ลง CSS จริง · **ยังไม่ได้คลิกจริง (เจ้าของทดสอบ)**
-- [ ] Performance: `next/image`, lazy YouTube, cache/revalidate ที่เหมาะสม
+- [~] **Performance** — ทำรอบแรกแล้ว (2026-07-23) เหลือเรื่อง cache ระดับหน้า
+  - [x] **`lib/image-url.ts` `cloudinaryUrl(url, width)`** — แทรก `f_auto,q_auto,w_…,c_limit` ให้ URL Cloudinary ตอนแสดงผล (URL โดเมนอื่นคืนค่าเดิม)
+        ใช้ที่ cover-image / การ์ดข่าว-ผลงาน-อัลบั้ม / บุคลากร / hero slider / แกลเลอรี (กริด 400px, lightbox 1600px)
+        > **ทำไมไม่ใช้ `next/image`:** URL รูปมาจากโดเมนไหนก็ได้ที่แอดมินวางเอง (Cloudinary/YouTube/Drive/Dropbox) → ต้องประกาศ `remotePatterns` ล่วงหน้าทุกโดเมน ไม่งั้นรูปพัง
+  - [x] `loading="lazy"` + `decoding="async"` ทุกรูปที่ไม่ใช่ภาพแรกของหน้า · **hero banner + รูปปกข่าว = `fetchPriority="high"` ไม่ lazy** (ภาพ LCP)
+  - [x] YouTube ฝังแบบ lazy อยู่แล้วตั้งแต่ 4.6 (`youtube-embed` ใช้ `loading="lazy"` + nocookie)
+  - [x] 🐛 **เก็บหนี้ revalidate:** action ของ news/works/events ไม่เคย `revalidatePath("/")` → เปิด cache เมื่อไร **หน้าแรกจะค้างข่าว/ผลงาน/กิจกรรมเก่า** (หน้าแรกมี 3 บล็อกนี้) → เติมแล้วทั้ง 3 ไฟล์
+  - [ ] ⏸️ เปิด cache หน้า public จริง (`cacheComponents` / `revalidate` รายหน้า) — ยังไม่เปิด รอทำพร้อม deploy จะได้วัดผลบนเครื่องจริง
   > **📌 แผน cache (คุยกัน 2026-07-17) — เป้าหมายจริงคือลดภาระ DB + bandwidth Cloudinary ไม่ใช่ "ค่า API"**
   > *(ตรวจแล้ว: ไม่มี API ภายนอกที่คิดเงินต่อ call — Cloudinary free tier 25 credits/เดือน คือตัวที่ต้องระวังสุด)*
   > - **Next 16 = Cache Components** (`cacheComponents: true` ใน `next.config.ts` + `'use cache'` + `cacheLife()`) — **ยังไม่เปิด**
@@ -559,7 +579,16 @@
   >   ✅ `revalidatePath()` ที่ใช้ใน `server/actions/news.ts` แล้ว **รองรับทั้งสองโมเดล** ไม่ต้องรื้อ
   > - **cache เฉพาะหน้า public** (4.5/4.6) — หลังบ้าน**ห้าม** cache (แอดมินต้องเห็นข้อมูลสด + คนใช้ไม่กี่คน ไม่คุ้ม)
   > - Cloudinary: ปล่อยให้ CDN ของมัน cache + ใช้ `f_auto`/`q_auto` — อย่า proxy ผ่าน optimizer ซ้ำโดยไม่จำเป็น
-- [ ] Security: rate-limit ฟอร์ม contact/like, sanitize HTML จาก Tiptap, ตรวจ RBAC ทุก Server Action
+- [x] **Security** ✅ *(2026-07-23)*
+  - [x] **sanitize HTML จาก Tiptap** — `lib/sanitize.ts` (`sanitize-html`) ครอบทั้ง 3 จุดที่ใช้ `dangerouslySetInnerHTML` (news/works/`[slug]`)
+        · allowlist ตามที่ editor สร้างได้จริง · **iframe ยอมเฉพาะโดเมน YouTube** · `javascript:` ถูกตัดด้วย `allowedSchemes` · เติม `rel="noopener noreferrer"` ให้ลิงก์ออกนอกเว็บ
+        · **กันตอนแสดงผล ไม่ใช่ตอนบันทึก** → เนื้อหาเก่าใน DB ปลอดภัยด้วย และเปลี่ยนกฎทีหลังไม่ต้องแก้ข้อมูล
+        · ✅ verify: insert เนื้อหาอันตรายลง DB จริงแล้วเปิดหน้า → **12/12 เคสผ่าน** (`<script>`/`onerror`/`javascript:`/iframe เว็บอื่น/`onclick`/`<style>` ถูกตัด · h2/strong/li/ลิงก์/iframe YouTube ยังอยู่ = positive control) · ล้าง row ทดสอบแล้ว
+  - [x] **rate-limit** — `lib/rate-limit.ts` (sliding window ใน memory) · contact **3 ครั้ง/10 นาที/IP** (อ่าน IP จาก `X-Forwarded-For`) · ไลก์อัลบั้ม **20 ครั้ง/นาที/เบราว์เซอร์** (คีย์ = cookie `visitor_id`)
+        · ✅ verify ยิง action ตรง: ครั้งที่ 1–3 `ok:true` · **ครั้งที่ 4–5 ถูกปฏิเสธ + DB มีแค่ 3 แถว** (บล็อกก่อนเขียนจริง) · **IP อื่นยิงได้ปกติ** ⇒ แยกตาม IP จริงไม่ใช่ล็อกทั้งระบบ · ล้างข้อมูลทดสอบแล้ว
+        > ⚠️ **ข้อจำกัดที่ต้องรู้:** นับใน memory ของ process → restart แล้วเริ่มใหม่ · หลาย container จะนับแยกกัน (แผน deploy = 1 container จึงพอ · ถ้า scale ค่อยเปลี่ยนไป Redis แก้แค่ไฟล์นี้)
+        > ⚠️ `X-Forwarded-For` ปลอมได้ถ้าไม่มี proxy หน้าเว็บ — แผน deploy มี Caddy ซึ่งเขียน header นี้ให้เอง
+  - [x] ตรวจ RBAC ทุก Server Action — ทำไปแล้วราย module ใน 4.4 (ทุก action gate + ทดสอบยิงตรง + positive control ครบทุกโมดูล)
 - [ ] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — เปลี่ยนแผนจาก Vercel/Neon (ตัดสินใจ 2026-07-22)
   > **สถาปัตยกรรม:** VPS 1 เครื่อง รัน `docker compose` 3 service → `caddy` (reverse proxy + auto HTTPS) → `app` (Next standalone :3000) → `db` (Postgres + named volume + backup pg_dump)
   > **Flow CI/CD:** push `main` → GitHub Actions `docker build` → push image ขึ้น **GHCR** → SSH เข้า VPS `compose pull && up -d` → `prisma migrate deploy` · build บน runner (ไม่กิน RAM/CPU ของ VPS) · pin image tag ไว้ rollback ได้

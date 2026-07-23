@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Play, ImageOff } from "lucide-react";
 import { mediaWorkThumbnail } from "@/lib/media-work";
+import { cloudinaryUrl } from "@/lib/image-url";
 
 export type WorkItem = {
   slug: string;
@@ -49,7 +50,13 @@ export function WorksSection({ works }: { works: WorkItem[] }) {
                 <div className="relative aspect-video overflow-hidden bg-muted">
                   {thumb ? (
                     // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
-                    <img src={thumb} alt="" className="size-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                    <img
+                      src={cloudinaryUrl(thumb, 600)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
                   ) : (
                     <div className="flex size-full items-center justify-center text-muted-foreground">
                       <ImageOff className="size-8" aria-hidden="true" />

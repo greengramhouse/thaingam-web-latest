@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { articleProse } from "@/lib/prose";
+import { sanitizeRichText } from "@/lib/sanitize";
 import { excerptFromHtml } from "@/lib/text";
 import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import { PageHero } from "@/components/public/page-hero";
@@ -53,7 +54,7 @@ export default async function DynamicPage({ params }: { params: Promise<{ slug: 
     <>
       <PageHero breadcrumb={page.title} title={page.title} />
       <div className="mx-auto max-w-[860px] px-4 py-9 pb-16 sm:px-6">
-        <div className={articleProse} dangerouslySetInnerHTML={{ __html: page.content }} />
+        <div className={articleProse} dangerouslySetInnerHTML={{ __html: sanitizeRichText(page.content) }} />
       </div>
     </>
   );

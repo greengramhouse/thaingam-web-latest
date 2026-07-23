@@ -6,6 +6,8 @@ import { ArrowLeft, CalendarDays, Eye, ImageOff } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatThaiDate } from "@/lib/date";
 import { articleProse } from "@/lib/prose";
+import { cloudinaryUrl } from "@/lib/image-url";
+import { sanitizeRichText } from "@/lib/sanitize";
 import { CoverImage } from "@/components/public/cover-image";
 import { NewsViewCounter } from "@/components/public/news-view-counter";
 import { JsonLd } from "@/components/public/json-ld";
@@ -129,11 +131,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
               ratio="aspect-[16/9]"
               rounded="rounded-2xl"
               iconClassName="size-10"
+              width={1000}
+              priority // รูปปกข่าว = ภาพ LCP ของหน้านี้
             />
           </div>
 
-          {/* เนื้อหา rich text จาก Tiptap (เขียนโดยแอดมินที่เชื่อถือได้ · sanitize อยู่ใน Phase 4.8) */}
-          <div className={articleProse} dangerouslySetInnerHTML={{ __html: news.content }} />
+          {/* เนื้อหา rich text จาก Tiptap — sanitize ทุกครั้งก่อนแสดง (ดู lib/sanitize.ts) */}
+          <div className={articleProse} dangerouslySetInnerHTML={{ __html: sanitizeRichText(news.content) }} />
 
           {news.tags.length > 0 && (
             <div className="mt-7 flex flex-wrap gap-2 border-t border-border pt-5">
@@ -158,7 +162,13 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
                     <div className="relative size-[56px] w-[72px] shrink-0 overflow-hidden rounded-[9px] bg-muted">
                       {r.coverImage ? (
                         // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
-                        <img src={r.coverImage} alt="" className="size-full object-cover" />
+                        <img
+                          src={cloudinaryUrl(r.coverImage, 200)}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="size-full object-cover"
+                        />
                       ) : (
                         <div className="flex size-full items-center justify-center text-muted-foreground">
                           <ImageOff className="size-4" aria-hidden="true" />

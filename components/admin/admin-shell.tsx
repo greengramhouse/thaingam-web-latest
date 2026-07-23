@@ -85,7 +85,16 @@ export function AdminShell({ user, children }: { user: AdminUser; children: Reac
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6">{children}</main>
+        {/* ลิงก์ข้ามเมนู — โผล่เมื่อโฟกัสด้วยคีย์บอร์ดเท่านั้น (เหมือนฝั่ง public) */}
+        <a
+          href="#admin-main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        >
+          ข้ามไปยังเนื้อหาหลัก
+        </a>
+        <main id="admin-main" className="flex-1 p-4 lg:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );

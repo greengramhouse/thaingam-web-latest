@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { UserRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { cloudinaryUrl } from "@/lib/image-url";
 import { PageHero } from "@/components/public/page-hero";
 
 export const metadata: Metadata = {
@@ -69,7 +70,13 @@ export default async function StaffPage() {
                     <div className="aspect-square bg-muted">
                       {m.photo ? (
                         // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
-                        <img src={m.photo} alt={m.name} className="size-full object-cover" />
+                        <img
+                          src={cloudinaryUrl(m.photo, 400)}
+                          alt={m.name}
+                          loading="lazy"
+                          decoding="async"
+                          className="size-full object-cover"
+                        />
                       ) : (
                         <div className="flex size-full items-center justify-center text-muted-foreground">
                           <UserRound className="size-12" aria-hidden="true" />

@@ -6,10 +6,12 @@ import { ArrowLeft, CalendarDays, ImageOff, User } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatThaiDate } from "@/lib/date";
 import { articleProse } from "@/lib/prose";
+import { sanitizeRichText } from "@/lib/sanitize";
 import { cn } from "@/lib/utils";
 import { YouTubeEmbed } from "@/components/public/youtube-embed";
 import { JsonLd } from "@/components/public/json-ld";
 import { mediaWorkThumbnail } from "@/lib/media-work";
+import { cloudinaryUrl } from "@/lib/image-url";
 import { articleJsonLd } from "@/lib/structured-data";
 import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 
@@ -133,7 +135,12 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ slu
         ) : work.thumbnail ? (
           // ARTICLE: รูปปก (ถ้ามี) — eslint-disable: URL จากโดเมนใดก็ได้ที่แอดมินวาง
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={work.thumbnail} alt={work.title} className="aspect-video w-full rounded-2xl bg-muted object-cover" />
+          <img
+            src={cloudinaryUrl(work.thumbnail, 1000)}
+            alt={work.title}
+            decoding="async"
+            className="aspect-video w-full rounded-2xl bg-muted object-cover"
+          />
         ) : (
           <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-muted text-muted-foreground">
             <ImageOff className="size-10" aria-hidden="true" />
@@ -147,7 +154,7 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ slu
 
       {/* เนื้อหาบทความ (เฉพาะ ARTICLE) */}
       {work.type === "ARTICLE" && work.content && (
-        <div className={articleProse} dangerouslySetInnerHTML={{ __html: work.content }} />
+        <div className={articleProse} dangerouslySetInnerHTML={{ __html: sanitizeRichText(work.content) }} />
       )}
 
       {work.tags.length > 0 && (

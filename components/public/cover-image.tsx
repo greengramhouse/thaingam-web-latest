@@ -1,5 +1,6 @@
 import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/image-url";
 
 /**
  * รูปปกที่แสดง **ทั้งภาพ ไม่ครอป** — รองรับภาพแนวตั้ง/แนวนอนคละกัน
@@ -14,6 +15,8 @@ export function CoverImage({
   rounded,
   hover = false,
   iconClassName = "size-8",
+  width = 800,
+  priority = false,
 }: {
   src: string | null;
   alt?: string;
@@ -21,6 +24,10 @@ export function CoverImage({
   rounded?: string;
   hover?: boolean;
   iconClassName?: string;
+  /** ความกว้างสูงสุดที่ใช้จริง — ส่งต่อให้ Cloudinary ย่อ (รูปโดเมนอื่นไม่มีผล) */
+  width?: number;
+  /** รูปเด่นบนสุดของหน้า (LCP) → โหลดทันทีไม่ lazy */
+  priority?: boolean;
 }) {
   if (!src) {
     return (
@@ -30,16 +37,29 @@ export function CoverImage({
     );
   }
 
+  // โหลด URL เดียวกันทั้งพื้นหลังเบลอและภาพจริง → เบราว์เซอร์ยิงเน็ตครั้งเดียว
+  const optimized = cloudinaryUrl(src, width);
+
   return (
     <div className={cn("relative overflow-hidden bg-muted", ratio, rounded)}>
       {/* พื้นหลังเบลอเติมกรอบ */}
       {/* eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง */}
-      <img src={src} alt="" aria-hidden="true" className="absolute inset-0 size-full scale-110 object-cover blur-2xl" />
+      <img
+        src={optimized}
+        alt=""
+        aria-hidden="true"
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        className="absolute inset-0 size-full scale-110 object-cover blur-2xl"
+      />
       {/* ภาพจริง เห็นเต็มใบ */}
       {/* eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง */}
       <img
-        src={src}
+        src={optimized}
         alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        fetchPriority={priority ? "high" : undefined}
         className={cn(
           "relative size-full object-contain transition-transform duration-300",
           hover && "group-hover:scale-105",

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { cloudinaryUrl } from "@/lib/image-url";
 
 export type HeroBanner = { id: string; image: string; title: string | null; linkUrl: string | null };
 
@@ -31,7 +32,14 @@ export function HeroSlider({ banners }: { banners: HeroBanner[] }) {
   const current = banners[index];
   const img = (
     // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
-    <img src={current.image} alt={current.title ?? ""} className="size-full object-cover" />
+    <img
+      src={cloudinaryUrl(current.image, 1200)}
+      alt={current.title ?? ""}
+      // แบนเนอร์หน้าแรก = ภาพ LCP ของเว็บ → โหลดก่อนใคร ไม่ lazy
+      fetchPriority="high"
+      decoding="async"
+      className="size-full object-cover"
+    />
   );
 
   return (

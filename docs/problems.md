@@ -292,6 +292,28 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 - ผลคือ **sitemap แช่แข็งตั้งแต่วันที่ deploy** — แอดมินโพสต์ข่าวใหม่กี่ชิ้น Google ก็ไม่เห็น
 - ✅ แก้ด้วย `export const revalidate = 3600` (หรือ `dynamic = "force-dynamic"` ถ้าต้องสดทันที) · build output จะขึ้น `○ /sitemap.xml  1h`
 
+### 5.12 🔥 `loading.tsx` ทำให้ `notFound()` ตอบ **200 แทน 404** (soft 404)
+
+- ไฟล์ `loading.tsx` = สร้าง Suspense boundary → response ของ**ทุกหน้าใต้ segment นั้น**กลายเป็น **streaming**
+  → header ถูกส่งไปก่อนแล้ว **เปลี่ยน status ทีหลังไม่ได้** ⇒ หน้าที่เรียก `notFound()` ได้ **HTTP 200**
+  (Next ใส่ `<meta name="robots" content="noindex">` ให้แทน — Google ไม่ index แต่สถานะยังผิด)
+- 📖 เป็นพฤติกรรมที่ Next เขียนไว้ตรง ๆ ใน `03-file-conventions/loading.md` §Status Codes ไม่ใช่บั๊ก
+- **วัดจริงในโปรเจกต์นี้ (Phase 4.8):** `/mua-mua-slug` → มี `(public)/loading.tsx` = **200** · ย้ายไฟล์ออก = **404** (ทดสอบสลับไปกลับ)
+- ✅ ทางที่เลือก: **ไม่วาง `loading.tsx` ที่ระดับ route group** แล้วทำแทนด้วย
+  1. `loading.tsx` เฉพาะ segment ที่**ไม่มีหน้า detail** (`/staff` `/documents` `/calendar` `/contact` `/about` `/search`)
+  2. หน้าลิสต์ที่มี `[slug]` เป็นลูก (`/news` `/works` `/albums`) → ใช้ **`<Suspense>` ในไฟล์หน้านั้น** ครอบเฉพาะส่วนที่ query
+     (กระทบแค่หน้านั้น ลูกไม่โดน) · ใส่ `key` ตาม searchParams ให้ skeleton ขึ้นใหม่ตอนเปลี่ยนตัวกรอง
+- ⚠️ หลังบ้าน (`/admin`) วาง `loading.tsx` ได้ตามปกติ — `noindex` อยู่แล้วและไม่มี SEO ให้เสีย
+
+### 5.13 🧼 sanitize HTML จาก Tiptap ก่อน `dangerouslySetInnerHTML`
+
+- ใช้ `sanitize-html` (ทำงานฝั่ง server ไม่ต้องมี DOM) → `lib/sanitize.ts` `sanitizeRichText()`
+- **กัน*ตอนแสดงผล* ไม่ใช่ตอนบันทึก** — เนื้อหาเก่าใน DB ปลอดภัยด้วย และเปลี่ยนกฎทีหลังไม่ต้องแก้ข้อมูล
+- allowlist ต้องยอม **`iframe` เฉพาะ YouTube** (`allowedIframeHostnames`) ไม่งั้นวิดีโอที่แทรกด้วย `extension-youtube` หายทั้งหมด
+  → **เพิ่มแท็กใน allowlist ทุกครั้งที่เพิ่ม extension ให้ editor**
+- ทดสอบด้วยการ **insert เนื้อหาอันตรายลง DB จริงแล้วเปิดหน้า** (12 เคส: `<script>` / `onerror` / `javascript:` / iframe เว็บอื่น / `<style>` ถูกตัด ·
+  h2/strong/li/ลิงก์/iframe YouTube ยังอยู่) — **positive control สำคัญพอ ๆ กับ negative** ไม่งั้นแยกไม่ออกระหว่าง "กันได้" กับ "ล้างทิ้งหมด"
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch

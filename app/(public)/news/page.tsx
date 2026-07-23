@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -8,6 +9,7 @@ import { PageHero } from "@/components/public/page-hero";
 import { CoverImage } from "@/components/public/cover-image";
 import { TableSearch } from "@/components/admin/table-search";
 import { PublicPagination } from "@/components/public/public-pagination";
+import { ListSkeleton } from "@/components/public/list-skeleton";
 
 export const metadata: Metadata = {
   title: "ข่าวประชาสัมพันธ์",
@@ -27,40 +29,10 @@ export default async function PublicNewsPage({
   const { q, category, page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
-  const where: Prisma.NewsWhereInput = {
-    status: "PUBLISHED",
-    ...(category ? { category: { slug: category } } : {}),
-    ...(q
-      ? {
-          OR: [
-            { title: { contains: q, mode: "insensitive" } },
-            { excerpt: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  };
-
-  const [categories, total, news] = await Promise.all([
-    prisma.category.findMany({ orderBy: { name: "asc" }, select: { name: true, slug: true } }),
-    prisma.news.count({ where }),
-    prisma.news.findMany({
-      where,
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: {
-        slug: true,
-        title: true,
-        excerpt: true,
-        coverImage: true,
-        publishedAt: true,
-        createdAt: true,
-        category: { select: { name: true } },
-      },
-    }),
-  ]);
-
-  const pageCount = Math.ceil(total / PAGE_SIZE);
+  const categories = await prisma.category.findMany({
+    orderBy: { name: "asc" },
+    select: { name: true, slug: true },
+  });
 
   function pillHref(slug?: string) {
     const params = new URLSearchParams();
@@ -114,8 +86,62 @@ export default async function PublicNewsPage({
           <TableSearch placeholder="ค้นหาข่าว" />
         </div>
 
-        {/* กริดข่าว */}
-        {news.length === 0 ? (
+        {/* กริดข่าว — แยกเป็น Suspense เพื่อให้ขึ้น skeleton ระหว่าง query
+            (ไม่ใช้ `loading.tsx` เพราะจะทำให้ `/news/[slug]` ที่ไม่มีจริงตอบ 200 แทน 404 — ดู list-skeleton.tsx) */}
+        <Suspense key={`${q ?? ""}|${category ?? ""}|${page}`} fallback={<ListSkeleton />}>
+          <NewsResults q={q} category={category} page={page} />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+
+async function NewsResults({
+  q,
+  category,
+  page,
+}: {
+  q?: string;
+  category?: string;
+  page: number;
+}) {
+  const where: Prisma.NewsWhereInput = {
+    status: "PUBLISHED",
+    ...(category ? { category: { slug: category } } : {}),
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: "insensitive" } },
+            { excerpt: { contains: q, mode: "insensitive" } },
+          ],
+        }
+      : {}),
+  };
+
+  const [total, news] = await Promise.all([
+    prisma.news.count({ where }),
+    prisma.news.findMany({
+      where,
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        slug: true,
+        title: true,
+        excerpt: true,
+        coverImage: true,
+        publishedAt: true,
+        createdAt: true,
+        category: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  const pageCount = Math.ceil(total / PAGE_SIZE);
+
+  return (
+    <>
+      {news.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-6 py-20 text-center">
             <p className="font-semibold">{q || category ? "ไม่พบข่าวที่ค้นหา" : "ยังไม่มีข่าว"}</p>
             <p className="text-sm text-muted-foreground">
@@ -154,8 +180,7 @@ export default async function PublicNewsPage({
           </div>
         )}
 
-        <PublicPagination basePath="/news" params={{ q, category }} page={page} pageCount={pageCount} />
-      </div>
+      <PublicPagination basePath="/news" params={{ q, category }} page={page} pageCount={pageCount} />
     </>
   );
 }

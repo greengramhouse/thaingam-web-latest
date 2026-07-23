@@ -1,16 +1,38 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Heart, ImageIcon, Images } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatThaiDate } from "@/lib/date";
+import { cloudinaryUrl } from "@/lib/image-url";
 import { PageHero } from "@/components/public/page-hero";
+import { ListSkeleton } from "@/components/public/list-skeleton";
 
 export const metadata: Metadata = {
   title: "อัลบั้มภาพ",
   description: "ภาพกิจกรรมและบรรยากาศต่าง ๆ ของโรงเรียนชุมชนวัดไทยงาม",
 };
 
-export default async function AlbumsPage() {
+export default function AlbumsPage() {
+  return (
+    <>
+      <PageHero
+        breadcrumb="อัลบั้มภาพ"
+        title="อัลบั้มภาพกิจกรรม"
+        subtitle="รวมภาพความประทับใจจากกิจกรรมต่าง ๆ ของโรงเรียน"
+      />
+
+      <div className="mx-auto max-w-[1200px] px-4 py-9 pb-16 sm:px-6">
+        {/* Suspense แทน loading.tsx เพื่อไม่ให้ `/albums/[slug]` เสียสถานะ 404 (ดู list-skeleton.tsx) */}
+        <Suspense fallback={<ListSkeleton ratio="aspect-[4/3]" />}>
+          <AlbumGrid />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+
+async function AlbumGrid() {
   const albums = await prisma.album.findMany({
     where: { status: "PUBLISHED" },
     orderBy: [{ eventDate: "desc" }, { createdAt: "desc" }],
@@ -27,14 +49,7 @@ export default async function AlbumsPage() {
 
   return (
     <>
-      <PageHero
-        breadcrumb="อัลบั้มภาพ"
-        title="อัลบั้มภาพกิจกรรม"
-        subtitle="รวมภาพความประทับใจจากกิจกรรมต่าง ๆ ของโรงเรียน"
-      />
-
-      <div className="mx-auto max-w-[1200px] px-4 py-9 pb-16 sm:px-6">
-        {albums.length === 0 ? (
+      {albums.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-6 py-20 text-center">
             <p className="font-semibold">ยังไม่มีอัลบั้มภาพ</p>
             <p className="text-sm text-muted-foreground">โปรดกลับมาใหม่อีกครั้ง</p>
@@ -53,8 +68,10 @@ export default async function AlbumsPage() {
                     {cover ? (
                       // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
                       <img
-                        src={cover}
+                        src={cloudinaryUrl(cover, 600)}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
@@ -86,7 +103,6 @@ export default async function AlbumsPage() {
             })}
           </div>
         )}
-      </div>
     </>
   );
 }

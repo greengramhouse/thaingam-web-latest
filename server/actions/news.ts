@@ -20,6 +20,7 @@ async function requireContentManager() {
 function revalidateNews(slug?: string) {
   revalidatePath("/admin/news");
   revalidatePath("/news");
+  revalidatePath("/"); // หน้าแรกมีบล็อกข่าว (Phase 4.5) — ไม่ revalidate = ข่าวใหม่ไม่ขึ้นหน้าแรก
   if (slug) revalidatePath(`/news/${slug}`);
 }
 

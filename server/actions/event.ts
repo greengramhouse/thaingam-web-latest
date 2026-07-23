@@ -16,6 +16,7 @@ async function requireContentManager() {
 function revalidateEvents() {
   revalidatePath("/admin/events");
   revalidatePath("/calendar"); // หน้าปฏิทินสาธารณะ (Phase 4.6)
+  revalidatePath("/"); // หน้าแรกมีบล็อก "กิจกรรมเร็ว ๆ นี้" (Phase 4.5)
 }
 
 type Parsed = ReturnType<typeof eventFormSchema.parse>;

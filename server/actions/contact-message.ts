@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { canManageContent, getCurrentUser } from "@/lib/rbac";
 import { contactFormSchema } from "@/lib/validations/contact";
+import { clientIp, hitRateLimit } from "@/lib/rate-limit";
 import type { ActionResult } from "@/server/actions/types";
 
 async function requireContentManager() {
@@ -18,9 +19,19 @@ function revalidateMessages() {
 
 /**
  * ส่งข้อความจากหน้า "ติดต่อเรา" (สาธารณะ — ไม่ต้องล็อกอิน) → สร้าง ContactMessage เข้า inbox แอดมิน
- * ⚠️ rate-limit / กันสแปม ยกไปทำที่ Phase 4.8 (security)
+ * กันสแปมด้วย rate limit ต่อ IP (Phase 4.8) — เช็ค**ก่อน** validate เพื่อไม่ให้ยิงรัวมาไล่เดารูปแบบข้อมูลได้ฟรี
  */
+const CONTACT_LIMIT = 3;
+const CONTACT_WINDOW_MS = 10 * 60 * 1000; // 3 ข้อความ / 10 นาที / IP
+
 export async function submitContactMessage(input: unknown): Promise<ActionResult> {
+  const ip = await clientIp();
+  const limit = hitRateLimit(`contact:${ip}`, CONTACT_LIMIT, CONTACT_WINDOW_MS);
+  if (!limit.ok) {
+    const minutes = Math.ceil(limit.retryAfterSec / 60);
+    return { ok: false, error: `ส่งข้อความบ่อยเกินไป กรุณารออีก ${minutes} นาทีแล้วลองใหม่` };
+  }
+
   const parsed = contactFormSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "ข้อมูลไม่ถูกต้อง", fieldErrors: parsed.error.flatten().fieldErrors };

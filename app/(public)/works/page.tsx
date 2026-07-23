@@ -1,12 +1,15 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ImageOff, Play } from "lucide-react";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { mediaWorkThumbnail } from "@/lib/media-work";
+import { cloudinaryUrl } from "@/lib/image-url";
 import { cn } from "@/lib/utils";
 import { PageHero } from "@/components/public/page-hero";
 import { PublicPagination } from "@/components/public/public-pagination";
+import { ListSkeleton } from "@/components/public/list-skeleton";
 
 export const metadata: Metadata = {
   title: "ผลงานและสื่อการสอน",
@@ -45,28 +48,6 @@ export default async function PublicWorksPage({
   const { type, page: pageParam } = await searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
 
-  const where: Prisma.MediaWorkWhereInput = { status: "PUBLISHED", ...typeFilter(type) };
-
-  const [total, works] = await Promise.all([
-    prisma.mediaWork.count({ where }),
-    prisma.mediaWork.findMany({
-      where,
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: {
-        slug: true,
-        title: true,
-        type: true,
-        youtubeUrl: true,
-        thumbnail: true,
-        author: { select: { name: true } },
-      },
-    }),
-  ]);
-
-  const pageCount = Math.ceil(total / PAGE_SIZE);
-
   function tabHref(value?: string) {
     return value ? `/works?type=${value}` : "/works";
   }
@@ -100,7 +81,41 @@ export default async function PublicWorksPage({
           })}
         </div>
 
-        {works.length === 0 ? (
+        {/* กริดผลงาน — Suspense แทน loading.tsx เพื่อไม่ให้ `/works/[slug]` เสียสถานะ 404 */}
+        <Suspense key={`${type ?? ""}|${page}`} fallback={<ListSkeleton />}>
+          <WorksResults type={type} page={page} />
+        </Suspense>
+      </div>
+    </>
+  );
+}
+
+async function WorksResults({ type, page }: { type?: string; page: number }) {
+  const where: Prisma.MediaWorkWhereInput = { status: "PUBLISHED", ...typeFilter(type) };
+
+  const [total, works] = await Promise.all([
+    prisma.mediaWork.count({ where }),
+    prisma.mediaWork.findMany({
+      where,
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: {
+        slug: true,
+        title: true,
+        type: true,
+        youtubeUrl: true,
+        thumbnail: true,
+        author: { select: { name: true } },
+      },
+    }),
+  ]);
+
+  const pageCount = Math.ceil(total / PAGE_SIZE);
+
+  return (
+    <>
+      {works.length === 0 ? (
           <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-6 py-20 text-center">
             <p className="font-semibold">ยังไม่มีผลงานในหมวดนี้</p>
             <p className="text-sm text-muted-foreground">โปรดกลับมาใหม่อีกครั้ง</p>
@@ -120,8 +135,10 @@ export default async function PublicWorksPage({
                     {thumb ? (
                       // eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง
                       <img
-                        src={thumb}
+                        src={cloudinaryUrl(thumb, 600)}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
@@ -157,8 +174,7 @@ export default async function PublicWorksPage({
           </div>
         )}
 
-        <PublicPagination basePath="/works" params={{ type }} page={page} pageCount={pageCount} />
-      </div>
+      <PublicPagination basePath="/works" params={{ type }} page={page} pageCount={pageCount} />
     </>
   );
 }

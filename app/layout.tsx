@@ -4,14 +4,14 @@ import { siteUrl } from "@/lib/site-url";
 import { SITE_DESCRIPTION, SITE_NAME, buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import "./globals.css";
 
+// ฟอนต์สำรองท้ายสุด (เว็บทั้งหมดใช้ Inter + Anuphan แล้ว — ดู `--font-sans` ใน globals.css)
 const notoSansThai = Noto_Sans_Thai({
-  variable: "--font-sans",
+  variable: "--font-noto-thai",
   subsets: ["thai", "latin"],
   display: "swap",
 });
 
-// เพิ่มไว้ให้หน้า auth (ตาม DESIGN.md: Inter สำหรับละติน/ตัวเลข + Anuphan สำหรับไทย)
-// ยังไม่ตั้งเป็นฟอนต์เริ่มต้นทั้งเว็บ — หลังบ้านยังใช้ Noto Sans Thai อยู่
+// ฟอนต์หลักทั้งเว็บตาม DESIGN.md: Inter สำหรับละติน/ตัวเลข + Anuphan สำหรับไทย
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
