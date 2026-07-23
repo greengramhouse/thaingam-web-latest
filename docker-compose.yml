@@ -49,9 +49,10 @@ services:
       EMAIL_FROM: ${EMAIL_FROM:-}
     expose:
       - "3000"
-    # เปิดพอร์ตออก localhost ของ VPS เผื่อกรณีมี reverse proxy ของเดิมอยู่แล้วบนเครื่อง
+    # เปิดพอร์ตออก localhost ของ VPS ให้ reverse proxy ของเครื่อง (Caddy) ชี้มา
+    # ⚠️ ค่าเริ่มต้น 3001 ไม่ใช่ 3000 — VPS เครื่องนี้มี StockApp ครอง 127.0.0.1:3000 อยู่แล้ว
     ports:
-      - "127.0.0.1:${APP_HOST_PORT:-3000}:3000"
+      - "127.0.0.1:${APP_HOST_PORT:-3001}:3000"
 
 volumes:
   db-data:

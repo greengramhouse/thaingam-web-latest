@@ -29,20 +29,57 @@ push main → GitHub Actions: docker build → push GHCR
 
 ---
 
+## 0) สภาพ VPS จริงของโปรเจกต์นี้ (ตรวจเมื่อ 2026-07-23)
+
+`greengramvps` — `147.50.231.133` · ssh ด้วย **user `deploy`** (ไม่ใช่ root · มี sudo) · alias `stockapp` ใน `~/.ssh/config` ของเครื่องเจ้าของ
+
+| สิ่งที่มีอยู่แล้ว | รายละเอียด |
+|---|---|
+| **Caddy v2.11.4** | รันเป็น **systemd service** (ไม่ใช่ docker) · `/etc/caddy/Caddyfile` มี site เดียว: `stockapp.greengramhouse.com → 127.0.0.1:3000` |
+| **StockApp** | `/home/deploy/stock-app/docker-compose.prod.yml` · container `stock-app` (GHCR) ครอง **127.0.0.1:3000** · ใช้ ~93 MB |
+| **Postgres 16.14** | container `stock-db` (ของ StockApp) ไม่ publish port · ใช้ ~61 MB |
+| **สเปก** | RAM **1.9 GB · swap 0** · ดิสก์ 20 GB (ว่าง 13 GB) |
+
+**ผลต่อการ deploy เว็บโรงเรียน — 3 ข้อที่ต้องทำต่างจากค่าเริ่มต้น:**
+
+1. **ห้ามใช้ `docker-compose.caddy.yml`** — เครื่องมี Caddy อยู่แล้วและถือพอร์ต 80/443 · ให้เพิ่ม site block
+   ใน `/etc/caddy/Caddyfile` แทน แล้ว `sudo systemctl reload caddy`:
+
+   ```caddy
+   <โดเมนของโรงเรียน> {
+       reverse_proxy 127.0.0.1:3001
+   }
+   ```
+   *(Caddy ใส่ `X-Forwarded-For` ให้เองอยู่แล้ว → rate limit ฝั่งแอปอ่าน IP ได้ถูก)*
+
+2. **`APP_HOST_PORT=3001`** — 3000 ถูก StockApp ใช้อยู่ (ค่าเริ่มต้นใน compose ตั้งเป็น 3001 ให้แล้ว)
+
+3. **ควรเพิ่ม swap ก่อน** — เครื่องมี swap 0 และ RAM เหลือใช้จริง ~1.3 GB
+   เพิ่มอีก 2 container (~200 MB) ยังพอ แต่ไม่มี swap = spike ทีเดียว OOM kill ได้ทั้ง StockApp ด้วย:
+
+   ```bash
+   sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+   sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+   ```
+
+> 📌 **ทำไมยังแยก Postgres เป็น container ของตัวเอง** (ไม่ใช้ `stock-db` ร่วม): แยกแล้ว 2 โปรเจกต์ไม่ผูกชะตากัน
+> (restart/อัปเกรด/กู้ข้อมูลทำแยกได้) ต้นทุนแค่ ~60 MB · ถ้าวันหลัง RAM ตึงค่อยพิจารณารวม
+
+---
+
 ## 1) เตรียม VPS
 
 ```bash
-# ติดตั้ง docker + compose plugin (ถ้ายังไม่มี)
-curl -fsSL https://get.docker.com | sh
-
-# โฟลเดอร์ของโปรเจกต์
-sudo mkdir -p /srv/thaingam-web && cd /srv/thaingam-web
+# เครื่องนี้มี docker อยู่แล้ว (StockApp ใช้อยู่) → ข้ามขั้นติดตั้งได้
+# โฟลเดอร์ของโปรเจกต์ — วางไว้ข้าง ๆ stock-app ตามแพตเทิร์นเดิมของเครื่อง
+mkdir -p ~/thaingam-web && cd ~/thaingam-web     # = /home/deploy/thaingam-web
 ```
 
 คัดลอกขึ้นเครื่อง: `docker-compose.yml` · `.env` (สร้างจาก `.env.production.example`) ·
 `Caddyfile` + `docker-compose.caddy.yml` (เฉพาะถ้าจะใช้ Caddy)
 
-**ตรวจก่อนว่ามี reverse proxy อยู่แล้วหรือยัง:**
+**ตรวจก่อนว่ามี reverse proxy อยู่แล้วหรือยัง** *(เครื่องนี้ตรวจแล้ว = มี Caddy → ดู §0)*:
 
 ```bash
 sudo ss -tlnp '( sport = :80 or sport = :443 )'
@@ -61,8 +98,8 @@ docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}'
 |---|---|
 | `SITE_URL` | `https://<โดเมน>` — ⚠️ ฝังตอน build (NEXT_PUBLIC) ถ้าผิด sitemap/OG/CSRF พังหมด |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` | ค่าจาก Cloudinary (ใช้ตอน build) |
-| `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` | สำหรับ ssh เข้า deploy (คีย์ **private** ทั้งไฟล์) |
-| `VPS_APP_DIR` | เช่น `/srv/thaingam-web` |
+| `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` | `147.50.231.133` / `deploy` / คีย์ **private** ทั้งไฟล์ |
+| `VPS_APP_DIR` | `/home/deploy/thaingam-web` |
 
 > `GITHUB_TOKEN` ใช้ push ขึ้น GHCR ได้เลย ไม่ต้องสร้าง PAT (workflow ตั้ง `packages: write` ไว้แล้ว)
 > ครั้งแรก package ใน GHCR จะเป็น private → ให้ VPS `docker login ghcr.io` ด้วย PAT ที่มีสิทธิ์ `read:packages`
