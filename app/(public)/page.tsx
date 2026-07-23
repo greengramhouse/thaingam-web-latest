@@ -4,7 +4,9 @@ import { NewsSection } from "@/components/public/news-section";
 import { WorksSection } from "@/components/public/works-section";
 import { EventsSection } from "@/components/public/events-section";
 import { CtaSection } from "@/components/public/cta-section";
+import { JsonLd } from "@/components/public/json-ld";
 import { prisma } from "@/lib/prisma";
+import { schoolJsonLd } from "@/lib/structured-data";
 
 export default async function HomePage() {
   const startOfToday = new Date();
@@ -51,6 +53,8 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* structured data ของโรงเรียน — หน้าแรกเป็นหน้าที่ Google ใช้ประกอบ Knowledge panel */}
+      <JsonLd data={await schoolJsonLd()} />
       <Hero banners={banners} />
       <QuickLinks />
       <NewsSection items={news} />

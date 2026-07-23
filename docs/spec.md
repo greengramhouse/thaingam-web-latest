@@ -411,6 +411,7 @@ Thaingam-web/
 │   │   └── users/                   # เฉพาะ SUPER_ADMIN
 │   │
 │   ├── sitemap.ts   robots.ts       # SEO
+│   ├── og.png/route.tsx             # รูป OG (ImageResponse) — URL คงที่ ไม่ใช้ opengraph-image.tsx
 │   └── api/auth/[...all]/route.ts   # Better Auth handler
 │
 ├── components/
@@ -498,7 +499,8 @@ Thaingam-web/
 
 ## 10. สิ่งที่ผู้ใช้ต้องเตรียม (Prerequisites)
 
-- **PostgreSQL** (`DATABASE_URL`) — local หรือ Neon/Supabase
+- **PostgreSQL** (`DATABASE_URL`) — local (dev) · prod = container ใน `docker compose` บน VPS (ดูแผน deploy roadmap §4.8) หรือ managed ภายนอก
+- **Cloud VPS + โดเมน** (prod) — deploy ด้วย Docker + GitHub Actions (CI/CD) ผ่าน GHCR · reverse proxy + HTTPS ด้วย Caddy
 - **SMTP/Email provider** สำหรับ reset password — เช่น Resend
 - **Cloudinary** account (cloud name / API key) หรือวิธีทำลิงก์ตรงจาก Google Drive
 

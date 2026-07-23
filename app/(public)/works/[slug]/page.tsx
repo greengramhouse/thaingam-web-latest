@@ -8,6 +8,10 @@ import { formatThaiDate } from "@/lib/date";
 import { articleProse } from "@/lib/prose";
 import { cn } from "@/lib/utils";
 import { YouTubeEmbed } from "@/components/public/youtube-embed";
+import { JsonLd } from "@/components/public/json-ld";
+import { mediaWorkThumbnail } from "@/lib/media-work";
+import { articleJsonLd } from "@/lib/structured-data";
+import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 
 const getWork = cache(async (slug: string) => {
   return prisma.mediaWork.findFirst({
@@ -22,6 +26,7 @@ const getWork = cache(async (slug: string) => {
       thumbnail: true,
       publishedAt: true,
       createdAt: true,
+      updatedAt: true,
       author: { select: { name: true } },
       tags: { select: { id: true, name: true } },
     },
@@ -43,7 +48,24 @@ export async function generateMetadata({
   const { slug } = await params;
   const work = await getWork(slug);
   if (!work) return { title: "ไม่พบผลงาน" };
-  return { title: work.title, description: work.description ?? undefined };
+  const description = work.description ?? undefined;
+  // รูปปกคลิป YouTube คำนวณตอนแสดงผล (ไม่ได้เก็บใน DB — ดู lib/media-work.ts)
+  const image = mediaWorkThumbnail(work);
+  return {
+    title: work.title,
+    description,
+    alternates: { canonical: `/works/${slug}` },
+    openGraph: buildOpenGraph({
+      type: "article",
+      path: `/works/${slug}`,
+      title: work.title,
+      description,
+      image,
+      publishedTime: work.publishedAt ?? work.createdAt,
+      modifiedTime: work.updatedAt,
+    }),
+    twitter: buildTwitter({ title: work.title, description, image }),
+  };
 }
 
 export default async function WorkDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -55,6 +77,17 @@ export default async function WorkDetailPage({ params }: { params: Promise<{ slu
 
   return (
     <div className="mx-auto max-w-[860px] px-4 py-7 pb-16 sm:px-6">
+      <JsonLd
+        data={await articleJsonLd({
+          path: `/works/${slug}`,
+          title: work.title,
+          description: work.description,
+          image: mediaWorkThumbnail(work),
+          publishedAt: date,
+          updatedAt: work.updatedAt,
+          authorName: work.author?.name,
+        })}
+      />
       <Link
         href="/works"
         className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary"

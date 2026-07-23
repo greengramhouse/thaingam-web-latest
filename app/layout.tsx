@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Thai, Anuphan, Inter } from "next/font/google";
+import { siteUrl } from "@/lib/site-url";
+import { SITE_DESCRIPTION, SITE_NAME, buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import "./globals.css";
 
 const notoSansThai = Noto_Sans_Thai({
@@ -25,12 +27,18 @@ const anuphan = Anuphan({
 });
 
 export const metadata: Metadata = {
+  // ทำให้ path สัมพัทธ์ (เช่น /og.png) กลายเป็น absolute URL — ต้องมี ไม่งั้น OG/Twitter อ่านรูปไม่ได้
+  metadataBase: new URL(siteUrl()),
   title: {
-    default: "โรงเรียนชุมชนวัดไทยงาม",
-    template: "%s | โรงเรียนชุมชนวัดไทยงาม",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "เว็บไซต์ประชาสัมพันธ์โรงเรียนชุมชนวัดไทยงาม — ข่าวสาร ผลงาน/สื่อการสอน ปฏิทินกิจกรรม และข้อมูลโรงเรียน",
+  description: SITE_DESCRIPTION,
+  // ค่าเริ่มต้นให้หน้าที่ไม่ได้ประกาศ openGraph เอง
+  // ⚠️ ไม่ใส่ title/description ตรงนี้ — Next merge แบบ shallow แต่ค่าที่ "ไม่ได้ตั้ง" จะตกไปใช้ title/description
+  //    ของหน้านั้น ๆ ให้เอง (ถ้าตั้งไว้ ทุกหน้าจะได้ og:title เป็นชื่อเว็บหมด)
+  openGraph: buildOpenGraph({ path: "/" }),
+  twitter: buildTwitter({}),
 };
 
 export default function RootLayout({

@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { articleProse } from "@/lib/prose";
+import { excerptFromHtml } from "@/lib/text";
+import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import { PageHero } from "@/components/public/page-hero";
 
 /**
@@ -13,7 +15,7 @@ import { PageHero } from "@/components/public/page-hero";
 const getPage = cache(async (slug: string) => {
   return prisma.page.findFirst({
     where: { slug, status: "PUBLISHED" },
-    select: { title: true, content: true },
+    select: { title: true, content: true, updatedAt: true },
   });
 });
 
@@ -25,7 +27,21 @@ export async function generateMetadata({
   const { slug } = await params;
   const page = await getPage(slug);
   if (!page) return { title: "ไม่พบหน้านี้" };
-  return { title: page.title };
+  // หน้าแบบนี้ไม่มีช่องคำโปรย → ตัดจากเนื้อหามาเป็น description ให้ Google/การ์ดแชร์
+  const description = excerptFromHtml(page.content, 155) || undefined;
+  return {
+    title: page.title,
+    description,
+    alternates: { canonical: `/${slug}` },
+    openGraph: buildOpenGraph({
+      type: "article",
+      path: `/${slug}`,
+      title: page.title,
+      description,
+      modifiedTime: page.updatedAt,
+    }),
+    twitter: buildTwitter({ title: page.title, description }),
+  };
 }
 
 export default async function DynamicPage({ params }: { params: Promise<{ slug: string }> }) {

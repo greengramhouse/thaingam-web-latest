@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, Images } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { formatThaiDate } from "@/lib/date";
+import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 import { AlbumLikeButton } from "@/components/public/album-like-button";
 import { PhotoGallery } from "@/components/public/photo-gallery";
 
@@ -16,6 +17,7 @@ const getAlbum = cache(async (slug: string) => {
       id: true,
       title: true,
       description: true,
+      coverImage: true,
       eventDate: true,
       likeCount: true,
       photos: { orderBy: { order: "asc" }, select: { id: true, url: true, caption: true } },
@@ -31,7 +33,22 @@ export async function generateMetadata({
   const { slug } = await params;
   const album = await getAlbum(slug);
   if (!album) return { title: "ไม่พบอัลบั้ม" };
-  return { title: album.title, description: album.description ?? undefined };
+  const description = album.description ?? undefined;
+  // รูปปกที่ตั้งเอง ไม่มีก็ใช้รูปแรกในอัลบั้ม (หลักเดียวกับการ์ดในหน้า /albums)
+  const image = album.coverImage || album.photos[0]?.url;
+  return {
+    title: album.title,
+    description,
+    alternates: { canonical: `/albums/${slug}` },
+    openGraph: buildOpenGraph({
+      type: "article",
+      path: `/albums/${slug}`,
+      title: album.title,
+      description,
+      image,
+    }),
+    twitter: buildTwitter({ title: album.title, description, image }),
+  };
 }
 
 export default async function AlbumDetailPage({ params }: { params: Promise<{ slug: string }> }) {

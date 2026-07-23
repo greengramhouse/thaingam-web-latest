@@ -264,6 +264,34 @@ Error: listen EACCES: permission denied 0.0.0.0:3000
 - ✅ กฎ: **grid/flex child ที่ต้องหดได้ ใส่ `min-w-0`** (+ grid ใส่ `grid-cols-1` ฐานเสมอถ้าจะ override เป็นหลายคอลัมน์ที่ lg)
 - **วัด/หา element ผิด:** Chrome CDP `Emulation.setDeviceMetricsOverride` (จำลองกว้างเป๊ะ) → eval `document.documentElement.scrollWidth - clientWidth` + ไล่ `getBoundingClientRect().right > vw` · ⚠️ `chrome --screenshot` แยก instance จับภาพตอน dev **recompile** ได้ภาพ **stale** — เชื่อ CDP ที่โหลดเสร็จแล้วแทน
 
+### 5.9 🔥 metadata ของหน้า **ทับ `openGraph` ของ layout ทั้งก้อน** (merge แบบ shallow) → `og:image` หายเงียบ ๆ
+
+- Next merge metadata ระหว่าง segment แบบ **shallow** — field ซ้อนอย่าง `openGraph`/`robots` ที่ประกาศใน page
+  จะ **แทนที่** ของ layout ทั้งอ็อบเจกต์ ไม่ใช่รวมกัน *(Next docs `generate-metadata.md` §Ordering)*
+- อาการจริงที่เจอ (Phase 4.7): หน้าผลงานที่ไม่มีรูปปกตั้ง `openGraph` เอง (เพื่อใส่ `type:"article"`)
+  → **ไม่มี `og:image` เลยสักแท็ก** ทั้งที่มี `opengraph-image.tsx` อยู่ (รูปจาก file convention หายไปด้วย)
+  · และตั้ง `openGraph.title` ที่ layout → **ทุกหน้าได้ `og:title` เป็นชื่อเว็บ** ไม่ใช่ชื่อหน้า
+- ✅ วิธีที่ใช้: ยกค่าที่ใช้ร่วมออกเป็นตัวสร้างกลาง **`lib/metadata.ts` → `buildOpenGraph()`/`buildTwitter()`**
+  แล้วให้ทุกหน้าเรียกตัวนี้ (ใส่ `siteName`/`locale`/รูป fallback ให้ครบทุกครั้ง) · **ที่ layout อย่าตั้ง `openGraph.title/description`**
+  ปล่อยว่างไว้ Next จะตกไปใช้ `title`/`description` ของหน้านั้นเอง
+- **ตรวจยังไง:** `curl` หน้าจริงแล้ว grep `<meta property="og:` ทีละหน้า — ไม่ใช่ดูแค่หน้าเดียวแล้วเหมา
+
+### 5.10 🖼️ `ImageResponse` (`next/og`) **ไม่มีฟอนต์ไทย** → ได้กล่องสี่เหลี่ยม + path ของ `opengraph-image` มี hash
+
+- ฟอนต์ที่มากับ `next/og` คือ **Geist (ละตินล้วน)** → ข้อความไทยกลายเป็น tofu ต้องส่ง `fonts:[{name,data,weight}]` เอง
+- **ดึง TTF จาก Google Fonts:** `curl -H "User-Agent: Mozilla/5.0" "https://fonts.googleapis.com/css2?family=Anuphan:wght@600"`
+  → ได้ URL `.ttf` · ⚠️ **UA เป็น MSIE จะได้ EOT** (satori อ่านไม่ออก) และ UA เบราว์เซอร์ใหม่จะได้ **woff2** (อ่านไม่ออกเหมือนกัน)
+  → ตรวจไฟล์ที่โหลดมาด้วย `file x.ttf` ต้องขึ้น *TrueType Font data* · เก็บไว้ที่ `assets/` (ไม่ใช่ `public/` — ไม่ต้อง serve)
+- ⚠️ **`opengraph-image.tsx` (file convention) อ้างอิงตรงไม่ได้** — URL จริงคือ `/opengraph-image-<hash>?<id>` ส่วน `/opengraph-image` ตอบ **404**
+  (เผลอเอาไปใส่ JSON-LD `image` แล้วเป็นลิงก์เสีย) → โปรเจกต์นี้ทำเป็น route **`app/og.png/route.tsx`** URL คงที่แทน แล้วอ้างจาก `lib/metadata.ts`
+- ตรวจผลด้วยตาเสมอ: `curl -o og.png localhost:4000/og.png` แล้ว**เปิดดูรูป** (200 + `image/png` ไม่ได้แปลว่าตัวอักษรไม่ใช่กล่อง)
+
+### 5.11 ⏱️ `sitemap.ts` / `robots.ts` / route ที่อ่าน DB = **static ตั้งแต่ build** ถ้าไม่ตั้ง `revalidate`
+
+- ทั้งคู่เป็น Route Handler พิเศษ **ที่ Next cache ให้เองถ้าไม่ได้ใช้ request-time API** → เห็นได้จาก build output `○ /sitemap.xml`
+- ผลคือ **sitemap แช่แข็งตั้งแต่วันที่ deploy** — แอดมินโพสต์ข่าวใหม่กี่ชิ้น Google ก็ไม่เห็น
+- ✅ แก้ด้วย `export const revalidate = 3600` (หรือ `dynamic = "force-dynamic"` ถ้าต้องสดทันที) · build output จะขึ้น `○ /sitemap.xml  1h`
+
 ### 5.3 Tiptap
 
 - **`immediatelyRender: false` บังคับใน Next (SSR)** ไม่งั้น hydration mismatch
@@ -413,3 +441,14 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
   - แบรนด์/นิวทรัล: ใช้ `bg-primary` `text-muted-foreground` `bg-card` `border-border` `bg-secondary` ฯลฯ (ดู `app/globals.css` `:root`)
   - accent เชิงข้อมูล (สถานะ/หมวด/ไอคอนสถิติ): `bg-mint-muted`/`text-mint-foreground`/`bg-mint` · `sky-*` · `warning-*`
   - Tailwind v4: token ตั้งใน `@theme inline` เป็น `--color-<ชื่อ>` แล้ว utility เกิดเอง (`--color-sky-muted` → `bg-sky-muted`) · ชื่อไม่มีเลขจึงไม่ชนพาเลต `sky-500` ดีฟอลต์ของ Tailwind
+
+### 8.6 🔥 `next build` **ต้องมี DATABASE_URL ที่ต่อติดจริง** (พิสูจน์แล้ว 2026-07-23)
+
+- หน้า public หลายหน้า (`/about` `/albums` `/calendar` `/contact` `/documents` `/staff` + `/og.png` `/sitemap.xml`)
+  ถูก **prerender เป็น static ตอน build** → Next เรียก Prisma จริงระหว่าง build
+- **ทดลองตรง ๆ:** `docker stop thaingam-postgres` แล้ว `pnpm build` →
+  `Error occurred prerendering page "/about"` · `PrismaClientKnownRequestError ECONNREFUSED` · **exit 1**
+  *(positive control: เปิด DB กลับมา build เดิมผ่าน 42/42 หน้า)*
+- ⚠️ **มีผลกับแผน deploy (roadmap 4.8):** GitHub Actions ที่ `docker build` บน runner **ไม่มี DB** → build พังทันที
+  ทางเลือก: (1) ให้ runner ต่อ DB ได้ (2) ยกหน้าที่ query DB เป็น dynamic (`force-dynamic`) (3) build ในเครือข่ายเดียวกับ DB บน VPS
+- ไม่ใช่ของใหม่จาก Phase 4.7 — เป็นแบบนี้มาตั้งแต่มีหน้า public ที่ query DB (4.5/4.6) เพิ่งมาเจอตอนลองรัน build จริง

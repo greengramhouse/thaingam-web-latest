@@ -413,7 +413,7 @@
         - 🐛 **ต้นตอ overflow แนวนอนทั้งหน้า = กับดัก min-width:auto** — (1) hero `grid` ไม่มี `grid-cols-1` ฐาน → auto track ขยายเกิน viewport → เพิ่ม `grid-cols-1` (minmax(0,1fr)) + `min-w-0` ที่ทั้งสองคอลัมน์ · (2) marquee viewport `flex-1 overflow-hidden` ขาด `min-w-0` → flex item ไม่หดต่ำกว่า track `w-max` ดันความกว้าง body → เพิ่ม `min-w-0`
         - **banner หลักใหญ่เกินบน tablet/มือถือ** (4/3 เต็มกว้าง) → `hero-slider` ใช้ `aspect-video lg:aspect-[4/3]` (16/9 จอเล็ก เตี้ยลง+เห็นภาพกว้างขึ้น · 4/3 เฉพาะ desktop 2 คอลัมน์)
         > 📸 **บทเรียน:** Chrome `--screenshot` แยก instance จับภาพตอน dev server กำลัง recompile ได้ภาพ **stale** (เห็นคลิปทั้งที่แก้แล้ว) → ยืนยันด้วย **CDP `Page.reload`+วัด `scrollWidth-clientWidth` / `Page.captureScreenshot`** บน instance เดียวที่โหลดเสร็จแทน (Node 24 มี global WebSocket ต่อ CDP ตรงได้)
-  - [ ] ⏸️ ปุ่มค้นหา → `/search` (Phase 4.7) · ลิงก์หน้า feature (/news, /works…) → 404 จนกว่าจะทำ Phase 4.6
+  - [x] ✅ ปุ่มค้นหา → `/search` **ใช้งานได้แล้ว (Phase 4.7)** · ลิงก์หน้า feature (/news, /works…) ครบตั้งแต่ Phase 4.6
 
 ---
 
@@ -490,13 +490,44 @@
 
 **เป้าหมาย:** ค้นเจอ + Google เก็บ index ได้
 
-- [ ] `/search` — ค้น News/MediaWork/Page (Prisma `contains`, insensitive) + ปุ่มค้นบน Navbar
-- [ ] `generateMetadata` ต่อหน้า (title/description/OG) — โดยเฉพาะ news/works/albums detail
-- [ ] `app/sitemap.ts` (รวม dynamic slugs ที่ PUBLISHED)
-- [ ] `app/robots.ts`
-- [ ] JSON-LD (`School` / `Article`) ในหน้าเกี่ยวข้อง
-- [ ] OG image (static หรือ dynamic `opengraph-image`)
-- [ ] ✅ verify: `/sitemap.xml`, `/robots.txt` ถูกต้อง, ค้นหาเจอ, preview OG ผ่าน
+- [x] **`/search`** — ค้น News/MediaWork/Page (Prisma `contains` + `mode:"insensitive"`) + ปุ่มค้นบน Navbar ใช้งานได้แล้ว ✅
+  - [x] `lib/text.ts` — `htmlToText()`/`excerptFromHtml()` ตัด HTML จาก Tiptap มาทำตัวอย่างผลค้นหา *(คนละเรื่องกับ sanitize ของ 4.8 — อันนี้แสดงเป็นข้อความล้วน React escape ให้เอง)*
+  - [x] `components/public/search-box` — **กด Enter/ปุ่มถึงค้น ไม่ debounce แบบ `table-search`** (หน้านี้ยิง 3 ตาราง ไม่ควรยิงทุกตัวอักษร)
+  - [x] หน้า: PageHero + กล่องค้นหาลอยคร่อมขอบ + **แท็บ ทั้งหมด/ข่าวสาร/ผลงาน/หน้าข้อมูล พร้อมตัวเลขต่อกลุ่ม** (`?type=`)
+        · แท็บ "ทั้งหมด" โชว์กลุ่มละ 4 + ลิงก์ "ดูทั้งหมด →" · แท็บเจาะจงแบ่งหน้า (`PublicPagination`) · empty state + สถานะ "ยังไม่พิมพ์คำค้น" (ไม่ยิง DB)
+  - [x] `robots: { index:false, follow:true }` — หน้าผลค้นหาไม่ควรถูก index (เนื้อหาซ้ำ + สร้าง URL ได้ไม่จำกัด) และไม่อยู่ใน sitemap
+- [x] **`generateMetadata` ต่อหน้า** (title/description/OG/canonical) ✅
+  - [x] `lib/site-url.ts` (`siteUrl()`/`absoluteUrl()`) + `metadataBase` ใน root layout → path สัมพัทธ์กลายเป็น absolute
+  - [x] **`lib/metadata.ts` — `buildOpenGraph()`/`buildTwitter()` เป็นแหล่งเดียว** (เหตุผลอยู่ในบั๊กด้านล่าง)
+  - [x] news/works/albums/`[slug]` detail: og:title/description/รูปปกจริง/`article:published_time`/`canonical`
+- [x] **`app/sitemap.ts`** — 9 หน้าคงที่ + slug ที่ **PUBLISHED เท่านั้น** (news/works/albums/pages) · `lastModified` จาก `updatedAt` · `revalidate = 3600`
+- [x] **`app/robots.ts`** — allow `/` · disallow `/admin` `/api` `/login` · ชี้ `Sitemap:` ไปที่ absolute URL
+- [x] **JSON-LD** — `lib/structured-data.ts` + `components/public/json-ld` (escape `<` กัน `</script>` หลุด)
+      · **`School`** (ชื่อ/คำขวัญ/โลโก้/เบอร์/อีเมล/ที่อยู่/social จาก SiteSetting จริง — ไม่มีค่าไหนตัดคีย์นั้นทิ้ง ไม่ปั้นข้อมูล) ที่หน้าแรก + `/about`
+      · **`Article`** (headline/รูป/datePublished/dateModified/author/publisher) ที่ news + works detail
+- [x] **OG image แบบ dynamic** — `app/og.png/route.tsx` (`ImageResponse`) โลโก้ + ชื่อไทย/อังกฤษ + คำขวัญ บนพื้นไล่เฉดคราม 1200×630 · `revalidate = 3600`
+- [x] `.env.example` เพิ่ม **`NEXT_PUBLIC_SITE_URL`** *(ไม่ตั้ง = ใช้ `BETTER_AUTH_URL` · ⚠️ ตอน deploy ต้องเป็นโดเมน https จริง ไม่งั้น sitemap/OG ชี้ localhost)*
+- [x] ✅ verify (tsc + lint ผ่าน · **`pnpm build` ผ่าน 42/42 หน้า** · HTTP จริงบน `:4000`):
+  - `/robots.txt` = 200 เนื้อหาถูก · `/sitemap.xml` = 200 **17 URL** ตรงกับ DB เป๊ะ (news 3 / works 2 / albums 1 / pages 2 + คงที่ 9)
+    · 🔒 **negative control: ข่าว DRAFT `sport-day` ไม่อยู่ใน sitemap** (ใน DB มี 4 ข่าว ออกมา 3) ⇒ กรอง `status` ทำงานจริง
+  - `/search` ค้นภาษาไทยได้: `ทดสอบ`→4 (ข่าว 3 + ผลงาน 1 · เจอจากทั้ง title และ content) · `ผลงาน`→2 · `โรงเรียน`→1 (หน้า `/regulations`)
+    · **แท็บ `?type=news`→3 · `?type=works`→1** (กรองถูก) · 🔒 **`กีฬาเสียง` (ข่าว DRAFT) → ไม่พบผลลัพธ์** · `zzzxxqq` → ไม่พบ
+  - **OG/meta ครบทุกหน้าที่ตรวจ 9 หน้า:** og:title = ชื่อหน้าจริง · og:site_name มีทุกหน้า · **og:image มีทุกหน้า** (รูปปก Cloudinary/YouTube thumbnail ของจริง หรือ `/og.png`)
+    · canonical ที่หน้า detail · `/search` = `noindex, follow`
+  - **`/og.png` = 200 `image/png` 105 KB — เปิดดูรูปจริงแล้ว ตัวอักษรไทยเรนเดอร์ถูก ไม่ใช่กล่องสี่เหลี่ยม** (ดูบั๊กฟอนต์ด้านล่าง)
+  - JSON-LD parse ผ่าน: School (ที่อยู่/เบอร์/อีเมล/sameAs จาก SiteSetting จริง) · Article (author "ผู้ดูแลระบบ", datePublished/dateModified ถูก)
+> 🐛 **บั๊กที่เจอตอน verify (แก้แล้ว — ทั้งคู่มองไม่เห็นถ้าดูแค่ status 200):**
+> 1. **`openGraph` ของหน้า ทับของ layout ทั้งก้อน** (Next merge แบบ shallow) → หน้าผลงานที่ไม่มีรูปปก **ไม่มี `og:image` เลย**
+>    (รูปจาก `opengraph-image.tsx` file convention หายไปด้วย) · และ `openGraph.title` ที่ layout ทำให้ **ทุกหน้าได้ og:title เป็นชื่อเว็บ**
+>    → ยกเป็น `lib/metadata.ts` (`buildOpenGraph`) + เลิกตั้ง title/description ที่ layout · problems.md 5.9
+> 2. **`/opengraph-image` ตอบ 404** — URL จริงมี hash ต่อท้าย (`/opengraph-image-1c1a04?…`) แต่ JSON-LD ชี้ path เปล่า = ลิงก์เสีย
+>    → ย้ายเป็น route **`/og.png`** URL คงที่ อ้างซ้ำได้ทุกที่
+> ⚠️ **ฟอนต์ไทยใน `ImageResponse`:** ตัวที่มากับ `next/og` เป็น Geist (ละตินล้วน) → ต้องโหลด TTF เอง (`assets/Anuphan-SemiBold.ttf`)
+>    ดึงจาก Google Fonts ต้องส่ง `User-Agent: Mozilla/5.0` — UA เป็น MSIE จะได้ **EOT**, UA ใหม่จะได้ **woff2** ซึ่ง satori อ่านไม่ออกทั้งคู่ · problems.md 5.10
+> ⚠️ **`sitemap.ts`/`robots.ts` ถูก prerender เป็น static ตอน build** ถ้าไม่ตั้ง `revalidate` → sitemap แช่แข็งตั้งแต่วัน deploy · problems.md 5.11
+> 🔥 **เจอตอนลอง `pnpm build`: build ต้องมี DB ที่ต่อติดจริง** (หน้า public หลายหน้า prerender เป็น static แล้วยิง Prisma)
+>    พิสูจน์ด้วยการ `docker stop` แล้ว build → `ECONNREFUSED` prerender `/about` exit 1 · **มีผลกับแผน deploy 4.8 (runner ไม่มี DB)** · problems.md 8.6
+- [ ] ⏸️ **ยังไม่ได้ทดสอบคลิกจริง:** พิมพ์ค้นในช่อง/กด Enter, กดปุ่มค้นหาบน navbar, สลับแท็บ, แบ่งหน้า, preview การ์ดแชร์ใน Facebook/LINE จริง
 
 ---
 
@@ -529,7 +560,22 @@
   > - **cache เฉพาะหน้า public** (4.5/4.6) — หลังบ้าน**ห้าม** cache (แอดมินต้องเห็นข้อมูลสด + คนใช้ไม่กี่คน ไม่คุ้ม)
   > - Cloudinary: ปล่อยให้ CDN ของมัน cache + ใช้ `f_auto`/`q_auto` — อย่า proxy ผ่าน optimizer ซ้ำโดยไม่จำเป็น
 - [ ] Security: rate-limit ฟอร์ม contact/like, sanitize HTML จาก Tiptap, ตรวจ RBAC ทุก Server Action
-- [ ] ตั้งค่า production env + migrate + seed บน hosting (Vercel + Neon/Supabase)
+- [ ] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — เปลี่ยนแผนจาก Vercel/Neon (ตัดสินใจ 2026-07-22)
+  > **สถาปัตยกรรม:** VPS 1 เครื่อง รัน `docker compose` 3 service → `caddy` (reverse proxy + auto HTTPS) → `app` (Next standalone :3000) → `db` (Postgres + named volume + backup pg_dump)
+  > **Flow CI/CD:** push `main` → GitHub Actions `docker build` → push image ขึ้น **GHCR** → SSH เข้า VPS `compose pull && up -d` → `prisma migrate deploy` · build บน runner (ไม่กิน RAM/CPU ของ VPS) · pin image tag ไว้ rollback ได้
+  > **ไฟล์ที่ต้องเพิ่ม/แก้:** `next.config.ts` (เพิ่ม `output: "standalone"`) · `Dockerfile` (multi-stage deps→build→runner) · `.dockerignore` · `docker-compose.yml` · `Caddyfile` · `docker-entrypoint.sh` (migrate deploy ก่อน start) · `.github/workflows/deploy.yml` · `.env.production.example`
+  > **✅ ข่าวดี Prisma 7 (เช็คโค้ดแล้ว):** query compiler = WASM ฝัง base64 ใน `.js` · `pg` = pure JS (ไม่มี `pg-native`) · generated client = `.ts` ล้วน → ทั้งหมด bundle เข้า `next build` เอง **ไม่ต้อง copy engine binary / ไม่ต้องห่วง openssl/Alpine**
+  > **⚠️ กับดักที่ต้องระวังตอนทำ:**
+  > - `prisma migrate deploy` + `db seed` ยังต้องมี `prisma` CLI + `prisma/migrations/` + schema ตอน deploy (แยกจาก runtime bundle) → รันเป็น step ใน entrypoint หรือ compose service ชั่วคราว
+  > - `NEXT_PUBLIC_*` ฝังตอน **build** ไม่ใช่ runtime → `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`/`_API_KEY` ต้องส่งเป็น **build arg** ตอน `docker build` ไม่งั้น client ได้ค่าว่าง อัปโหลดรูปพัง
+  > - `BETTER_AUTH_URL` ต้องเป็นโดเมน https จริง + ตั้ง `trustedOrigins` ให้ตรง ไม่งั้น CSRF ตอบ 403 (เหมือนเคส port 4000 ตอน dev)
+  > - Secrets (`DATABASE_URL`/`BETTER_AUTH_SECRET`/`CLOUDINARY_API_SECRET`/`RESEND_API_KEY`) เก็บใน GitHub Secrets + ไฟล์ env บน VPS (ไม่ commit — `.gitignore` กัน `.env*` อยู่แล้ว)
+  > 🔥 **ข้อจำกัดที่เพิ่งพิสูจน์ตอน Phase 4.7 (2026-07-23):** `next build` **ต้องมี DATABASE_URL ที่ต่อติดจริง**
+  >    หน้า public หลายหน้า (`/about` `/albums` `/calendar` `/contact` `/documents` `/staff` + `/og.png` `/sitemap.xml`) ถูก prerender เป็น static แล้วยิง Prisma ตอน build
+  >    → `docker stop` DB แล้ว build = `ECONNREFUSED` prerender `/about` exit 1 · **GitHub Actions runner ไม่มี DB → build พังทันที**
+  >    ทางเลือก: (1) ให้ runner ต่อ DB ได้ · (2) ยกหน้าที่ query DB เป็น `force-dynamic` (เสีย static ไป) · (3) build บน VPS ในเครือข่ายเดียวกับ DB · problems.md 8.6
+  > **⚠️ อย่าลืม `NEXT_PUBLIC_SITE_URL`** = โดเมน https จริง (build arg) ไม่งั้น sitemap/canonical/OG ชี้ localhost ทั้งเว็บ
+  > **❓ รอเคาะก่อนลงมือ:** (1) Postgres = container ใน compose หรือ managed ภายนอก · (2) build→GHCR→pull หรือ build บน VPS · (3) proxy = Caddy / Nginx+certbot / มีอยู่แล้ว · (4) มีโดเมน + VPS พร้อมหรือยัง
 - [ ] ✅ verify: รันตาม "Verification" ใน spec หัวข้อ 9 ผ่านครบ → **เว็บสมบูรณ์** 🎉
 
 ---

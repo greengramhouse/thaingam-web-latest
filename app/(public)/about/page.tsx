@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Compass, Heart, Target } from "lucide-react";
 import { getSiteSettings } from "@/lib/site-settings-data";
+import { schoolJsonLd } from "@/lib/structured-data";
 import { PageHero } from "@/components/public/page-hero";
+import { JsonLd } from "@/components/public/json-ld";
 
 export const metadata: Metadata = {
   title: "เกี่ยวกับเรา",
@@ -37,6 +39,8 @@ export default async function AboutPage() {
 
   return (
     <>
+      {/* หน้า "เกี่ยวกับ" เป็นอีกจุดที่ Google อ่านข้อมูลองค์กร (@id เดียวกับหน้าแรก → ไม่นับซ้ำ) */}
+      <JsonLd data={await schoolJsonLd()} />
       <PageHero
         breadcrumb="เกี่ยวกับเรา"
         title="เกี่ยวกับโรงเรียน"

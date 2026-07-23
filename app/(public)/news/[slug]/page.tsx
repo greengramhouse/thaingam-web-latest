@@ -8,6 +8,9 @@ import { formatThaiDate } from "@/lib/date";
 import { articleProse } from "@/lib/prose";
 import { CoverImage } from "@/components/public/cover-image";
 import { NewsViewCounter } from "@/components/public/news-view-counter";
+import { JsonLd } from "@/components/public/json-ld";
+import { articleJsonLd } from "@/lib/structured-data";
+import { buildOpenGraph, buildTwitter } from "@/lib/metadata";
 
 /** ดึงข่าวที่เผยแพร่แล้วตาม slug — cache กัน query ซ้ำระหว่าง generateMetadata กับหน้า */
 const getNews = cache(async (slug: string) => {
@@ -21,9 +24,11 @@ const getNews = cache(async (slug: string) => {
       coverImage: true,
       publishedAt: true,
       createdAt: true,
+      updatedAt: true,
       viewCount: true,
       categoryId: true,
       category: { select: { name: true } },
+      author: { select: { name: true } },
       tags: { select: { id: true, name: true } },
     },
   });
@@ -37,9 +42,21 @@ export async function generateMetadata({
   const { slug } = await params;
   const news = await getNews(slug);
   if (!news) return { title: "ไม่พบข่าว" };
+  const description = news.excerpt ?? undefined;
   return {
     title: news.title,
-    description: news.excerpt ?? undefined,
+    description,
+    alternates: { canonical: `/news/${slug}` },
+    openGraph: buildOpenGraph({
+      type: "article",
+      path: `/news/${slug}`,
+      title: news.title,
+      description,
+      image: news.coverImage,
+      publishedTime: news.publishedAt ?? news.createdAt,
+      modifiedTime: news.updatedAt,
+    }),
+    twitter: buildTwitter({ title: news.title, description, image: news.coverImage }),
   };
 }
 
@@ -65,6 +82,17 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
     <div className="mx-auto max-w-[1200px] px-4 py-7 pb-16 sm:px-6">
       {/* นับวิวหลังหน้าโหลดจริง (client) */}
       <NewsViewCounter id={news.id} />
+      <JsonLd
+        data={await articleJsonLd({
+          path: `/news/${slug}`,
+          title: news.title,
+          description: news.excerpt,
+          image: news.coverImage,
+          publishedAt: publishedDate,
+          updatedAt: news.updatedAt,
+          authorName: news.author?.name,
+        })}
+      />
 
       <Link
         href="/news"
