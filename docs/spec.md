@@ -517,6 +517,20 @@ Thaingam-web/
 
 > เขียนไว้ให้พิมพ์เองได้ทีหลัง · ขั้นตอน deploy เต็ม ๆ อยู่ที่ [`deploy.md`](./deploy.md)
 
+## 📍 คำสั่งพวกนี้พิมพ์ **จากเครื่อง Windows ของตัวเอง**
+
+`ssh vps ...` = สั่งงานข้ามไปที่ VPS จากเครื่องตัวเอง · alias `vps` อยู่ใน `~/.ssh/config` ของเครื่อง Windows เท่านั้น
+
+**ถ้า prompt ขึ้นว่า `deploy@greengramvps:~$` แปลว่าอยู่บน VPS แล้ว** → **ตัด `ssh vps` ข้างหน้าออก** เหลือแต่ส่วนในเครื่องหมายคำพูด
+(ถ้าเผลอพิมพ์ `ssh vps` ซ้ำจะได้ `Could not resolve hostname vps` เพราะ VPS ไม่มี alias นี้)
+
+```bash
+# บน VPS พิมพ์แค่นี้ (เป็น bash ล้วน ไม่มีปัญหา quote แบบ Windows)
+cd ~/thaingam-web && docker compose exec db psql -U tguser -d thaingamweb   # เข้า psql
+~/thaingam-web/backup-db.sh                                                 # สำรองข้อมูล
+exit                                                                        # ออกจาก VPS
+```
+
 ## 🔴 อ่านก่อนก๊อป — เรื่อง quote บน Windows
 
 Windows มี 3 เชลล์ที่ **จัดการเครื่องหมายคำพูดไม่เหมือนกัน** คำสั่งที่ต้องส่ง SQL ข้าม ssh เลยพังง่ายมาก:
