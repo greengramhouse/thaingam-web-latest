@@ -614,6 +614,30 @@ DATABASE_URL="postgresql://tguser:${PGPASS}@localhost:5439/thaingamweb?schema=pu
 Get-NetTCPConnection -LocalPort 5555,5439 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
 ```
 
+### B4. DBeaver — เปิดค้างไว้ดูได้ตลอด (สะดวกสุดถ้าใช้บ่อย)
+
+DBeaver ทำ SSH tunnel ให้เองในตัว **ไม่ต้องรัน `ssh -L` เองเลย** ตั้งครั้งเดียวจบ
+
+เอารหัส DB มาก่อน: `ssh vps "grep POSTGRES_PASSWORD ~/thaingam-web/.env"`
+
+**New Database Connection → PostgreSQL**
+
+| แท็บ `Main` | | แท็บ `SSH` (ติ๊ก Use SSH Tunnel) | |
+|---|---|---|---|
+| Host | `127.0.0.1` | Host/IP | `147.50.231.133` |
+| Port | `5433` | Port | `22` |
+| Database | `thaingamweb` | User Name | `deploy` |
+| Username | `tguser` | Auth Method | Public Key |
+| Password | *(จากคำสั่งข้างบน)* | Private Key | `C:\Users\PC\.ssh\stock_app_deploy` |
+
+> ⚠️ **`127.0.0.1` ในแท็บ Main ไม่ใช่เครื่องตัวเอง** — DBeaver resolve จากมุมของเซิร์ฟเวอร์ SSH = localhost **ของ VPS**
+> ใส่ IP จริงของ VPS จะต่อไม่ได้ (พอร์ต 5433 ผูกกับ 127.0.0.1 เท่านั้น เข้าจากอินเทอร์เน็ตไม่ได้ — ตั้งใจให้ปลอดภัย)
+
+**ตั้งกันพลาด 3 อย่าง:**
+1. **Edit Connection → General → ติ๊ก `Read-only connection`** — DB จริง เผลอลบแล้วเว็บหายทันที ไม่มี undo
+2. **ตั้งชื่อ + สีให้ต่าง** เช่น `🔴 THAINGAM PRODUCTION` — กันสับสนกับ dev (`localhost:5436`) ที่หน้าตาเหมือนกันเป๊ะ
+3. **`Initialization` → `Keep-Alive (sec)` = 60** — กัน SSH หลุดตอนเปิดค้างนาน ๆ
+
 ### ⚠️ กับดักตอนเขียน SQL
 
 ชื่อ**ตาราง**เป็นตัวเล็ก (`news`, `site_setting`) แต่ชื่อ**คอลัมน์**เป็น camelCase → ต้องครอบ `"` ไม่งั้น Postgres แปลงเป็นตัวเล็กแล้วหาไม่เจอ · `user` เป็นคำสงวนต้องครอบด้วย
