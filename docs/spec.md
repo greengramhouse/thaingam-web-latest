@@ -509,4 +509,118 @@ Thaingam-web/
 ## สถานะ requirement
 
 ✅ Phase 1 (Schema) · ✅ Phase 2 (Architecture) · ✅ Phase 3 (UI/Components) · ✅ ฟีเจอร์เสริม
-⏸️ Phase 4 (Implementation) — **พร้อมเริ่ม รอคำสั่งจากเจ้าของโปรเจกต์**
+✅ Phase 4 (Implementation) — **เสร็จ + deploy ขึ้นจริงแล้ว 2026-07-25** → https://thaingam.greengramhouse.com
+
+---
+
+# 📖 ภาคผนวก — คำสั่งที่ใช้บ่อย (ก๊อปวางได้เลย)
+
+> เขียนไว้ให้พิมพ์เองได้ทีหลัง · ขั้นตอน deploy เต็ม ๆ อยู่ที่ [`deploy.md`](./deploy.md)
+
+## ⚠️ อ่านก่อน — มี DB **2 ก้อน** อย่าสลับกัน
+
+| ก้อน | ที่อยู่ | ใช้ตอนไหน |
+|---|---|---|
+| **dev** | เครื่องตัวเอง `localhost:5436` (container `thaingam-postgres`) | เขียนโค้ด / ทดลอง |
+| **production** | VPS `127.0.0.1:5433` — **เข้าจากอินเทอร์เน็ตไม่ได้ ต้องผ่าน SSH** | ข้อมูลจริงของโรงเรียน |
+
+คำสั่งไหนไม่ได้ระบุ `DATABASE_URL` = **วิ่งไปที่ dev** (อ่านจาก `.env`) · จะแตะ production ต้องผ่าน tunnel หรือ ssh เสมอ
+
+---
+
+## A. รันเว็บบนเครื่องตัวเอง (dev)
+
+```bash
+PORT=4000 pnpm dev          # ⚠️ ต้อง 4000 — Windows จองพอร์ต 3000 ไว้ (problems.md 2.1)
+pnpm prisma studio          # ดู DB dev ที่ http://localhost:5555
+```
+
+---
+
+## B. ดูฐานข้อมูล production
+
+### B1. ยิงคำสั่งเดียวจบ (ง่ายสุด ไม่ต้องเปิด tunnel)
+
+```bash
+ssh vps 'cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb -c "SELECT key, value FROM site_setting ORDER BY key;"'
+```
+> `-T` **ห้ามลืม** — ไม่ใส่แล้วคำสั่งจะค้างรอ TTY
+
+### B2. เข้าโหมด psql แบบพิมพ์โต้ตอบ
+
+```bash
+ssh vps -t 'cd ~/thaingam-web && docker compose exec db psql -U tguser -d thaingamweb'
+```
+> `-t` **ห้ามลืม** — ไม่ใส่แล้วจะไม่มี prompt ให้พิมพ์
+
+คำสั่งใน psql: `\dt` ดูตารางทั้งหมด · `\d news` ดูโครงสร้างตาราง · `\x` สลับแสดงผลแนวตั้ง · `\q` ออก
+
+### B3. เปิด Prisma Studio ดู production (หน้าเว็บกดง่าย)
+
+**เทอร์มินัลที่ 1** — เปิดท่อค้างไว้ (ปิดด้วย `Ctrl+C`):
+```bash
+ssh -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -N -L 5439:127.0.0.1:5433 vps
+```
+> `ExitOnForwardFailure=yes` สำคัญ — ถ้าพอร์ตชนแล้วไม่ใส่ ssh จะ**ล้มเงียบ ๆ แต่คืน exit 0** เหมือนสำเร็จ
+> `ServerAliveInterval=30` กันหลุดเพราะ idle (เคยหลุดกลางทางมาแล้ว Studio ขึ้น `Schema metadata unavailable`)
+
+**เทอร์มินัลที่ 2** — เอารหัส DB จาก VPS มาแล้วเปิด Studio:
+```bash
+PGPASS=$(ssh vps 'grep "^POSTGRES_PASSWORD=" ~/thaingam-web/.env | cut -d= -f2- | tr -d "\""')
+DATABASE_URL="postgresql://tguser:${PGPASS}@localhost:5439/thaingamweb?schema=public" \
+  pnpm prisma studio --port 5555
+```
+
+> 🛑 **Studio เขียนลง DB ดิบ ๆ ข้าม validation ทั้งหมด** (slug ซ้ำ / สถานะ / `revalidatePath` ล้าง cache)
+> → **แก้ข้อมูลให้ทำผ่าน `/admin` เสมอ** ใช้ Studio ดูอย่างเดียว
+
+**ปิดเมื่อเลิกใช้:**
+```powershell
+Get-NetTCPConnection -LocalPort 5555,5439 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+```
+
+### ⚠️ กับดักตอนเขียน SQL
+
+ชื่อ**ตาราง**เป็นตัวเล็ก (`news`, `site_setting`) แต่ชื่อ**คอลัมน์**เป็น camelCase → ต้องครอบ `"` ไม่งั้น Postgres แปลงเป็นตัวเล็กแล้วหาไม่เจอ · `user` เป็นคำสงวนต้องครอบด้วย
+
+```sql
+SELECT id, title, status, "publishedAt" FROM news ORDER BY "createdAt" DESC LIMIT 10;
+SELECT email, name, role FROM "user";
+SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE n_live_tup > 0 ORDER BY n_live_tup DESC;
+```
+
+---
+
+## C. สำรอง / กู้ข้อมูล
+
+```bash
+# สำรอง (ไฟล์ไปอยู่ ~/thaingam-web/backups/ บน VPS)
+ssh vps 'cd ~/thaingam-web && docker compose exec -T db pg_dump -U tguser thaingamweb | gzip > backups/db-$(date +%F-%H%M).sql.gz && ls -lh backups/'
+
+# ดึงลงเครื่องตัวเอง
+scp vps:~/thaingam-web/backups/db-*.sql.gz .
+
+# กู้คืน (⚠️ ทับข้อมูลปัจจุบัน — สำรองก่อนเสมอ)
+gunzip -c db-2026-07-25-1200.sql.gz | ssh vps 'cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb'
+```
+
+---
+
+## D. ดูสถานะเว็บบน VPS
+
+```bash
+ssh vps 'cd ~/thaingam-web && docker compose ps'          # container ยังรันไหม
+ssh vps 'cd ~/thaingam-web && docker compose logs -f app'  # ดู log สด (Ctrl+C ออก)
+ssh vps 'free -m; df -h /'                                 # RAM / ดิสก์
+```
+
+---
+
+## E. Deploy เวอร์ชันใหม่
+
+```bash
+git push origin main        # แค่นี้ — Actions build → GHCR → SSH เข้า VPS → migrate → รันตัวใหม่
+```
+ดูสถานะที่แท็บ **Actions** ของ repo · **rollback** = แก้ `APP_IMAGE` ใน `.env` บน VPS ให้ชี้ tag `sha-xxxxxxxx` เดิม แล้ว `docker compose up -d`
+
+> 🛑 **push เข้า `main` = ขึ้นเว็บจริงทันที** ไม่มีขั้นยืนยันคั่นกลาง — migration ที่ลบคอลัมน์/ตารางจะรันบนข้อมูลจริง สำรองก่อน (ข้อ C)
