@@ -3,23 +3,27 @@
 > ขั้นตอนจริงที่ต้องทำ เรียงตามลำดับ · สถาปัตยกรรมและเหตุผลอยู่ใน [`roadmap.md`](./roadmap.md) §4.8
 > กับดักที่เจอระหว่างทำอยู่ใน [`problems.md`](./problems.md) 8.6 / 9.x
 
-> ## 📍 กลับมาลุยต่อตรงนี้ (พักไว้ 2026-07-23 · อัปเดต 2026-07-25)
-> **โค้ดพร้อม deploy แล้ว 100%** — ไฟล์ครบ ทดสอบ image จริงผ่านหมด (ดู roadmap §4.8)
+> ## ✅ ขึ้นจริงแล้ว — **https://thaingam.greengramhouse.com** (2026-07-25)
 >
-> ✅ **โดเมนเคาะแล้ว (2026-07-25): `thaingam.greengramhouse.com`**
->    (แพตเทิร์นเดียวกับ `stockapp.greengramhouse.com` ที่ใช้อยู่บนเครื่องเดียวกัน)
->    → `SITE_URL=https://thaingam.greengramhouse.com` · `SITE_DOMAIN=thaingam.greengramhouse.com`
+> ทุกขั้นในเอกสารนี้ทำครบแล้ว · จากนี้ **push เข้า `main` = deploy อัตโนมัติ** (ดู §5)
 >
-> **ค้างอยู่ที่ 2 อย่างที่เจ้าของต้องทำเอง:**
-> 1. **ชี้ DNS A record** `thaingam` → `147.50.231.133` ที่ผู้ให้บริการโดเมน `greengramhouse.com`
->    *(ต้องขึ้นก่อน Caddy ถึงจะขอใบรับรอง HTTPS ผ่าน — เช็คด้วย `nslookup thaingam.greengramhouse.com`)*
-> 2. **ใส่ GitHub Secrets 7 ค่า** (ดู §2 — ทำแทนไม่ได้ ต้องเข้าหน้าเว็บ GitHub)
-> 3. ที่เหลือ (swap · โฟลเดอร์บน VPS · `.env` · site block ใน Caddyfile · push → deploy · seed แอดมิน) ทำต่อได้เลย
+> **สิ่งที่อยู่บนเครื่องจริงตอนนี้:**
+> - `deploy@147.50.231.133:/home/deploy/thaingam-web/` — `docker-compose.yml` + `.env` (perm 600)
+> - container `thaingam-web-app-1` (127.0.0.1:3001) + `thaingam-web-db-1` (127.0.0.1:5433) · **แยกจาก StockApp คนละชุด**
+> - swap 2 GB (`/swapfile` + `/etc/fstab`) — เดิม 0
+> - site block ใน **`/etc/caddy/Caddyfile`** (Caddy ของระบบ ไม่ใช่ของ compose) · สำรองไฟล์เดิมไว้ที่ `Caddyfile.bak-*`
+> - migration 15 ตัวลงครบผ่าน entrypoint · SUPER_ADMIN seed แล้ว
 >
-> ⚠️ **ยังไม่ push ขึ้น GitHub** — มี commit ค้างในเครื่อง · การ push จะ trigger workflow ทันที
-> ถ้ายังไม่ตั้ง Secrets ขั้น build จะผ่าน (ได้ image ขึ้น GHCR) แต่ขั้น deploy จะแดง (ไม่มีอะไรพัง แค่ล้มเหลว)
+> **✅ verify หลัง deploy จริง (2026-07-25):**
+> - 13 route สาธารณะ = 200 · `/admin` ไม่มี cookie = **307** · slug มั่ว = **404** (ไม่ใช่ soft 404)
+> - `NEXT_PUBLIC_SITE_URL` ฝังถูก — sitemap/`og:url`/`og:image`/robots ชี้โดเมนจริง ไม่ใช่ localhost
+> - 🔒 **login endpoint บนโดเมนจริง:** รหัสถูก → **200 + `role:SUPER_ADMIN`** (ไม่มี `INVALID_ORIGIN`) ·
+>   รหัสผิด → **401** (negative control) · cookie ที่ได้เข้า `/admin` → **200**
+> - RAM 772/1968 MB · swap ยังไม่ถูกแตะ · StockApp ไม่กระทบ
 >
-> 🔑 เข้า VPS: `ssh vps` (alias เพิ่มให้แล้วในเครื่องเจ้าของ — ชี้ `deploy@147.50.231.133`)
+> 🔑 เข้า VPS: `ssh vps` (alias ในเครื่องเจ้าของ — ชี้ `deploy@147.50.231.133`)
+>
+> ⚠️ **ห้ามแก้ `APP_IMAGE` ใน `.env` บน VPS ด้วยมือ** — workflow เขียนทับทุกครั้งที่ deploy (ยกเว้นตอน rollback ดู §5)
 
 ## ภาพรวม
 

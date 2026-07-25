@@ -589,7 +589,19 @@
         > ⚠️ **ข้อจำกัดที่ต้องรู้:** นับใน memory ของ process → restart แล้วเริ่มใหม่ · หลาย container จะนับแยกกัน (แผน deploy = 1 container จึงพอ · ถ้า scale ค่อยเปลี่ยนไป Redis แก้แค่ไฟล์นี้)
         > ⚠️ `X-Forwarded-For` ปลอมได้ถ้าไม่มี proxy หน้าเว็บ — แผน deploy มี Caddy ซึ่งเขียน header นี้ให้เอง
   - [x] ตรวจ RBAC ทุก Server Action — ทำไปแล้วราย module ใน 4.4 (ทุก action gate + ทดสอบยิงตรง + positive control ครบทุกโมดูล)
-- [~] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — เปลี่ยนแผนจาก Vercel/Neon (ตัดสินใจ 2026-07-22)
+- [x] **Deploy: self-host บน Cloud VPS ด้วย Docker + GitHub Actions (CI/CD)** — ✅ **ขึ้นจริงแล้ว 2026-07-25: https://thaingam.greengramhouse.com**
+  > 🎉 **deploy สำเร็จครบวงจร (2026-07-25)** — push `main` → Actions build → GHCR → SSH เข้า VPS → `compose up -d` → `migrate deploy` อัตโนมัติ
+  > **ทำบนเครื่องจริง:** swap 2 GB (เดิม 0) · `/home/deploy/thaingam-web/` + `.env` (perm 600, สุ่ม `POSTGRES_PASSWORD`/`BETTER_AUTH_SECRET` ใหม่) ·
+  >   site block ใน **`/etc/caddy/Caddyfile` ของระบบ** (ไม่ใช้ `docker-compose.caddy.yml` — Caddy เดิมถือ 80/443 อยู่) สำรองไฟล์เดิมก่อนแก้ ·
+  >   Let's Encrypt ออกใบรับรองสำเร็จ · migration **15 ตัวลงครบ** · seed SUPER_ADMIN ผ่าน SSH tunnel
+  > **✅ verify บนโดเมนจริง:** 13 route สาธารณะ = 200 · `/admin` ไม่มี cookie = 307 · slug มั่ว = **404** ·
+  >   `NEXT_PUBLIC_SITE_URL` ฝังถูก (sitemap/`og:url`/`og:image`/robots ชี้โดเมนจริง) ·
+  >   🔒 **login endpoint: รหัสถูก → 200 + `role:SUPER_ADMIN` ไม่มี `INVALID_ORIGIN` · รหัสผิด → 401 · cookie เข้า `/admin` → 200** (positive + negative control) ·
+  >   RAM 772/1968 MB · swap ยังไม่ถูกแตะ · StockApp ไม่กระทบ
+  > 🐛 **build ล้มรอบแรกบน CI ทั้งที่ผ่านบนเครื่อง** — `lib/generated/prisma` ถูก `.gitignore` แต่ stage `builder` copy มาแค่ `node_modules`
+  >   → บนเครื่อง `COPY . .` ลากโฟลเดอร์ที่ค้างอยู่เข้าไปกลบปัญหาไว้ · บน CI checkout สะอาด = `Module not found` ที่ `lib/prisma.ts:2`
+  >   ✅ แก้: `COPY --from=deps /app/lib/generated ./lib/generated` **หลัง** `COPY . .` · **reproduce + verify ด้วย `git archive`** (จำลอง checkout ของ CI เป๊ะ) · problems.md 8.8
+  > 📌 **แผนเดิม/เหตุผลที่ตัดสินใจ (2026-07-22) เก็บไว้ด้านล่างเพื่ออ้างอิง:**
   > ✅ **ไฟล์ครบแล้ว + ทดสอบ image จริงบนเครื่อง (2026-07-23)** — ขั้นตอนลงมือทั้งหมดอยู่ที่ **[`docs/deploy.md`](./deploy.md)**
   > **เจ้าของเคาะแล้ว:** Postgres = container ใน compose · build บน GitHub Actions → GHCR · **VPS + โดเมนพร้อมแล้ว** · reverse proxy รอผลตรวจว่าเครื่องมี nginx/caddy อยู่เดิมหรือไม่
   > **ทำแล้ว:** `next.config.ts` (`output:"standalone"`) · `Dockerfile` (deps→builder→prisma-cli→runner) · `.dockerignore` · `docker-compose.yml` · `docker-compose.caddy.yml` (แยกออกมา เผื่อเครื่องมี proxy เดิม) · `Caddyfile` · `docker-entrypoint.sh` · `.github/workflows/deploy.yml` · `.env.production.example`
