@@ -517,6 +517,26 @@ Thaingam-web/
 
 > เขียนไว้ให้พิมพ์เองได้ทีหลัง · ขั้นตอน deploy เต็ม ๆ อยู่ที่ [`deploy.md`](./deploy.md)
 
+## 🔴 อ่านก่อนก๊อป — เรื่อง quote บน Windows
+
+Windows มี 3 เชลล์ที่ **จัดการเครื่องหมายคำพูดไม่เหมือนกัน** คำสั่งที่ต้องส่ง SQL ข้าม ssh เลยพังง่ายมาก:
+
+| เชลล์ | `'...'` ข้างนอก | ผล |
+|---|---|---|
+| **cmd.exe** (`C:\Users\PC>`) | ไม่รู้จัก — ไม่ใช่อักขระคร่อมข้อความ | ❌ `unexpected EOF while looking for matching '` |
+| **PowerShell** | รู้จัก แต่**กลืน `"` ชั้นในทิ้ง** ตอนส่งให้โปรแกรมภายนอก | ❌ `psql: warning: extra command-line argument ... ignored` |
+| **Git Bash** | ปกติ | ✅ |
+
+**✅ กฎที่ใช้ได้ทั้ง 3 เชลล์: `"` ข้างนอก · `'` ข้างใน**  *(ทดสอบจริงครบทั้งสามแล้ว)*
+
+```bash
+ssh vps "cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb -c 'SELECT ...;'"
+#        ↑ double                                                                        ↑ single
+```
+
+⚠️ **PowerShell ระวังอีกอย่าง:** อะไรที่อยู่ใน `"..."` แล้วขึ้นต้นด้วย `$` **PowerShell จะคำนวณเองในเครื่อง**
+ก่อนส่งไป VPS (เช่น `$(date +%F)` กลายเป็นค่าว่าง) → คำสั่งที่ต้องใช้ `$` ฝั่ง VPS ให้ทำเป็น**สคริปต์บน VPS** แทน (ดูข้อ C)
+
 ## ⚠️ อ่านก่อน — มี DB **2 ก้อน** อย่าสลับกัน
 
 | ก้อน | ที่อยู่ | ใช้ตอนไหน |
@@ -542,16 +562,17 @@ pnpm prisma studio          # ดู DB dev ที่ http://localhost:5555
 ### B1. ยิงคำสั่งเดียวจบ (ง่ายสุด ไม่ต้องเปิด tunnel)
 
 ```bash
-ssh vps 'cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb -c "SELECT key, value FROM site_setting ORDER BY key;"'
+ssh vps "cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb -c 'SELECT key, value FROM site_setting ORDER BY key;'"
 ```
 > `-T` **ห้ามลืม** — ไม่ใส่แล้วคำสั่งจะค้างรอ TTY
 
-### B2. เข้าโหมด psql แบบพิมพ์โต้ตอบ
+### B2. เข้าโหมด psql แบบพิมพ์โต้ตอบ (แนะนำ ถ้าจะยิงหลายคำสั่ง)
 
 ```bash
-ssh vps -t 'cd ~/thaingam-web && docker compose exec db psql -U tguser -d thaingamweb'
+ssh vps -t "cd ~/thaingam-web && docker compose exec db psql -U tguser -d thaingamweb"
 ```
 > `-t` **ห้ามลืม** — ไม่ใส่แล้วจะไม่มี prompt ให้พิมพ์
+> เข้าโหมดนี้แล้วพิมพ์ SQL ได้ตรง ๆ **ไม่ต้องกังวลเรื่อง quote ของ Windows อีกเลย**
 
 คำสั่งใน psql: `\dt` ดูตารางทั้งหมด · `\d news` ดูโครงสร้างตาราง · `\x` สลับแสดงผลแนวตั้ง · `\q` ออก
 
@@ -593,15 +614,26 @@ SELECT relname, n_live_tup FROM pg_stat_user_tables WHERE n_live_tup > 0 ORDER B
 
 ## C. สำรอง / กู้ข้อมูล
 
-```bash
-# สำรอง (ไฟล์ไปอยู่ ~/thaingam-web/backups/ บน VPS)
-ssh vps 'cd ~/thaingam-web && docker compose exec -T db pg_dump -U tguser thaingamweb | gzip > backups/db-$(date +%F-%H%M).sql.gz && ls -lh backups/'
+**สำรอง — จำแค่บรรทัดเดียว** (สคริปต์ `backup-db.sh` วางไว้บน VPS แล้ว):
 
-# ดึงลงเครื่องตัวเอง
+```bash
+ssh vps ~/thaingam-web/backup-db.sh
+```
+ได้ไฟล์ `~/thaingam-web/backups/db-YYYY-MM-DD-HHMM.sql.gz` (ชื่อไฟล์เป็นเวลาไทย) ·
+เช็คขนาดไฟล์ก่อนบอกว่าสำเร็จ (กัน `pg_dump` ล้มแล้วได้ไฟล์เปล่า) · เก็บย้อนหลัง 14 ไฟล์ ที่เก่ากว่านั้นลบเอง
+
+> 📌 ทำเป็นสคริปต์เพราะคำสั่งเดิมมี `$(date ...)` ที่ต้องรันบน VPS แต่ **PowerShell แอบคำนวณเองในเครื่อง** ก่อนส่ง
+> · แก้สคริปต์แล้วอย่าลืม `scp backup-db.sh vps:~/thaingam-web/` (ไม่ได้อัปเดตเองตอน deploy เหมือน compose)
+
+```bash
+# ดึงไฟล์สำรองลงเครื่องตัวเอง
 scp vps:~/thaingam-web/backups/db-*.sql.gz .
 
-# กู้คืน (⚠️ ทับข้อมูลปัจจุบัน — สำรองก่อนเสมอ)
-gunzip -c db-2026-07-25-1200.sql.gz | ssh vps 'cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb'
+# ดูว่ามีไฟล์สำรองอะไรบ้าง
+ssh vps "ls -lh ~/thaingam-web/backups/"
+
+# กู้คืน (⚠️ ทับข้อมูลปัจจุบันทั้งหมด — รัน backup-db.sh ก่อนเสมอ)
+gunzip -c db-2026-07-25-1024.sql.gz | ssh vps "cd ~/thaingam-web && docker compose exec -T db psql -U tguser -d thaingamweb"
 ```
 
 ---
@@ -609,9 +641,9 @@ gunzip -c db-2026-07-25-1200.sql.gz | ssh vps 'cd ~/thaingam-web && docker compo
 ## D. ดูสถานะเว็บบน VPS
 
 ```bash
-ssh vps 'cd ~/thaingam-web && docker compose ps'          # container ยังรันไหม
-ssh vps 'cd ~/thaingam-web && docker compose logs -f app'  # ดู log สด (Ctrl+C ออก)
-ssh vps 'free -m; df -h /'                                 # RAM / ดิสก์
+ssh vps "cd ~/thaingam-web && docker compose ps"           # container ยังรันไหม
+ssh vps -t "cd ~/thaingam-web && docker compose logs -f app"  # ดู log สด (Ctrl+C ออก)
+ssh vps "free -m; df -h /"                                 # RAM / ดิสก์
 ```
 
 ---
