@@ -3,12 +3,17 @@
 > ขั้นตอนจริงที่ต้องทำ เรียงตามลำดับ · สถาปัตยกรรมและเหตุผลอยู่ใน [`roadmap.md`](./roadmap.md) §4.8
 > กับดักที่เจอระหว่างทำอยู่ใน [`problems.md`](./problems.md) 8.6 / 9.x
 
-> ## 📍 กลับมาลุยต่อตรงนี้ (พักไว้ 2026-07-23)
+> ## 📍 กลับมาลุยต่อตรงนี้ (พักไว้ 2026-07-23 · อัปเดต 2026-07-25)
 > **โค้ดพร้อม deploy แล้ว 100%** — ไฟล์ครบ ทดสอบ image จริงผ่านหมด (ดู roadmap §4.8)
-> **ค้างอยู่ที่ 3 อย่าง เรียงตามลำดับที่ต้องทำ:**
-> 1. **เจ้าของเคาะชื่อโดเมน** ← ติดตรงนี้ · ตัวเลือกที่เสนอไว้: `thaingam.greengramhouse.com`
->    (แพตเทิร์นเดียวกับ `stockapp.greengramhouse.com` ที่ใช้อยู่บนเครื่องเดียวกัน) แล้วชี้ A record → `147.50.231.133`
-> 2. **เจ้าของใส่ GitHub Secrets 7 ค่า** (ดู §2 — ทำแทนไม่ได้ ต้องเข้าหน้าเว็บ GitHub)
+>
+> ✅ **โดเมนเคาะแล้ว (2026-07-25): `thaingam.greengramhouse.com`**
+>    (แพตเทิร์นเดียวกับ `stockapp.greengramhouse.com` ที่ใช้อยู่บนเครื่องเดียวกัน)
+>    → `SITE_URL=https://thaingam.greengramhouse.com` · `SITE_DOMAIN=thaingam.greengramhouse.com`
+>
+> **ค้างอยู่ที่ 2 อย่างที่เจ้าของต้องทำเอง:**
+> 1. **ชี้ DNS A record** `thaingam` → `147.50.231.133` ที่ผู้ให้บริการโดเมน `greengramhouse.com`
+>    *(ต้องขึ้นก่อน Caddy ถึงจะขอใบรับรอง HTTPS ผ่าน — เช็คด้วย `nslookup thaingam.greengramhouse.com`)*
+> 2. **ใส่ GitHub Secrets 7 ค่า** (ดู §2 — ทำแทนไม่ได้ ต้องเข้าหน้าเว็บ GitHub)
 > 3. ที่เหลือ (swap · โฟลเดอร์บน VPS · `.env` · site block ใน Caddyfile · push → deploy · seed แอดมิน) ทำต่อได้เลย
 >
 > ⚠️ **ยังไม่ push ขึ้น GitHub** — มี commit ค้างในเครื่อง · การ push จะ trigger workflow ทันที
@@ -59,7 +64,7 @@ push main → GitHub Actions: docker build → push GHCR
    ใน `/etc/caddy/Caddyfile` แทน แล้ว `sudo systemctl reload caddy`:
 
    ```caddy
-   <โดเมนของโรงเรียน> {
+   thaingam.greengramhouse.com {
        reverse_proxy 127.0.0.1:3001
    }
    ```
@@ -109,7 +114,7 @@ docker ps --format '{{.Names}}\t{{.Image}}\t{{.Ports}}'
 
 | Secret | ค่า |
 |---|---|
-| `SITE_URL` | `https://<โดเมน>` — ⚠️ ฝังตอน build (NEXT_PUBLIC) ถ้าผิด sitemap/OG/CSRF พังหมด |
+| `SITE_URL` | `https://thaingam.greengramhouse.com` — ⚠️ ฝังตอน build (NEXT_PUBLIC) ถ้าผิด sitemap/OG/CSRF พังหมด |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` | ค่าจาก Cloudinary (ใช้ตอน build) |
 | `VPS_HOST` / `VPS_USER` / `VPS_SSH_KEY` | `147.50.231.133` / `deploy` / คีย์ **private** ทั้งไฟล์ |
 | `VPS_APP_DIR` | `/home/deploy/thaingam-web` |
