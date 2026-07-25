@@ -609,10 +609,13 @@ DATABASE_URL="postgresql://tguser:${PGPASS}@localhost:5439/thaingamweb?schema=pu
 > 🛑 **Studio เขียนลง DB ดิบ ๆ ข้าม validation ทั้งหมด** (slug ซ้ำ / สถานะ / `revalidatePath` ล้าง cache)
 > → **แก้ข้อมูลให้ทำผ่าน `/admin` เสมอ** ใช้ Studio ดูอย่างเดียว
 
-**ปิดเมื่อเลิกใช้:**
+**ปิดเมื่อเลิกใช้** (PowerShell):
 ```powershell
-Get-NetTCPConnection -LocalPort 5555,5439 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+$c = Get-NetTCPConnection -LocalPort 5555,5439 -State Listen -ErrorAction SilentlyContinue
+if ($c) { $c.OwningProcess | Sort-Object -Unique | ForEach-Object { Stop-Process -Id $_ -Force; "ปิดแล้ว PID $_" } } else { "ไม่มีอะไรเปิดค้างอยู่แล้ว" }
 ```
+> ⚠️ **ต้องมี `-ErrorAction SilentlyContinue`** — ไม่ใส่แล้วตอนที่ *ไม่มีอะไรเปิดค้าง* (ซึ่งคือกรณีปกติ)
+> จะพ่น error แดงยาว ๆ `No matching MSFT_NetTCPConnection objects found` ทั้งที่ไม่มีอะไรผิด
 
 ### B4. DBeaver — เปิดค้างไว้ดูได้ตลอด (สะดวกสุดถ้าใช้บ่อย)
 
