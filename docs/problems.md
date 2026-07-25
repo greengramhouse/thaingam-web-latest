@@ -489,3 +489,31 @@ HTTP 200 บอกได้แค่ว่า server ไม่พัง **จั
    ✅ แก้ที่ entrypoint: `export NODE_PATH=/opt/tools/node_modules`
 4. 📌 **seed รันใน image ไม่ได้** — `prisma/seed.ts` `import "@/lib/auth"` = source จริง ซึ่ง standalone ไม่มี (มีแต่โค้ดที่ build แล้ว)
    ✅ ทำครั้งเดียวจากเครื่องผู้ดูแลผ่าน **SSH tunnel** เข้า Postgres ของ VPS แทน (docs/deploy.md §4)
+
+### 8.8 🔥 build ผ่านบนเครื่อง แต่ล้มบน CI — `lib/generated/prisma` ถูก `.gitignore` (2026-07-25)
+
+**อาการ:** GitHub Actions run แรกล้มที่ `RUN pnpm build` → `exit code: 1`
+เปิด log เห็น `Module not found` ชี้ที่ `./lib/prisma.ts:2:1` (`import "@/lib/generated/prisma/client"`)
+แต่ `docker build` บนเครื่องนักพัฒนา**ผ่านสบาย ๆ** แม้ใส่ `--no-cache`
+
+**สาเหตุ:** `prisma generate` ออกไฟล์ที่ `lib/generated/prisma` ซึ่งอยู่ **นอก `node_modules`** และถูก `.gitignore` (บรรทัด 45)
+- stage `builder` copy มาแค่ `COPY --from=deps /app/node_modules` → **ไม่ได้เอา `lib/generated` มาด้วย**
+- บนเครื่องนักพัฒนามีโฟลเดอร์นั้นค้างอยู่ → `COPY . .` ลากติดเข้า image เลยกลบปัญหาไว้
+- บน CI checkout สะอาด ไม่มีไฟล์ → พังทันที
+
+**✅ แก้:** ใน stage `builder` เพิ่มบรรทัดนี้ **หลัง `COPY . .`** (ลำดับสำคัญ — ก่อนหน้าจะโดน `COPY . .` ทับ)
+```dockerfile
+COPY --from=deps /app/lib/generated ./lib/generated
+```
+
+**🎯 บทเรียนสำคัญกว่าตัวบั๊ก — `docker build` ในโฟลเดอร์โปรเจกต์ไม่ใช่ control ของ CI**
+build context ดูดไฟล์ที่ **git ไม่ track** เข้าไปด้วย (`lib/generated/`, artifact อื่น ๆ) → ผ่านบนเครื่องแต่ไม่ได้แปลว่า CI จะผ่าน
+ครั้งนี้เคยสรุปผิดไปแล้วรอบหนึ่งว่า "โค้ดไม่ผิด ปัญหาอยู่ที่ CI" เพราะ control ปนเปื้อน (ดู 7.3)
+✅ **จำลอง CI ให้ตรงด้วย `git archive`** — ได้เฉพาะไฟล์ที่ track จริง เท่ากับที่ runner checkout เป๊ะ:
+```bash
+mkdir /tmp/ci-clean && git archive HEAD | tar -x -C /tmp/ci-clean
+cd /tmp/ci-clean && docker build --build-arg ... .
+```
+รอบนี้ reproduce error ตัวเดียวกับ CI ได้ก่อน แล้วค่อยพิสูจน์ว่าตัวแก้ทำให้ผ่าน (negative → positive control ครบคู่)
+
+**⚠️ กับดักเดียวกันจะโผล่อีกกับไฟล์อื่นที่ generate แล้ว gitignore ไว้** — ถ้าเพิ่ม codegen ตัวใหม่ อย่าลืมเช็คว่ามันเข้าไปถึง image ทาง stage ไหน

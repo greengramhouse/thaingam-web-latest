@@ -33,6 +33,12 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
     NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# ⚠️ **ต้องอยู่หลัง `COPY . .`** — Prisma client ที่ generate แล้วออกที่ `lib/generated/prisma`
+#    ซึ่งอยู่ **นอก** node_modules และถูก .gitignore ไว้
+#    → บนเครื่องนักพัฒนามีไฟล์นี้อยู่ `COPY . .` เลยลากติดมาด้วย build ผ่าน
+#      แต่บน CI (checkout สะอาด) ไม่มี → `@/lib/generated/prisma/client` หาย build ล้มทันที
+#    หยิบจาก stage deps ที่ postinstall generate ไว้แล้ว (ไม่ต้อง generate ซ้ำ)
+COPY --from=deps /app/lib/generated ./lib/generated
 RUN pnpm build
 
 # ---- prisma-cli: เครื่องมือสำหรับ migrate/seed ตอน deploy ----
