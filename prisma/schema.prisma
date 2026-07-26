@@ -209,13 +209,15 @@ model Event {
   @@map("event")
 }
 
-/// ทำเนียบบุคลากร — เรียงตาม order (น้อย→มาก) แล้วชื่อ · isActive=false = ซ่อนจากหน้าเว็บแต่ยังเก็บไว้
+/// ทำเนียบบุคลากร — หน้าเว็บแบ่งเป็นกลุ่มตาม department ก่อน แล้วเรียงคนในกลุ่มด้วย order
+/// ⚠️ `order` มีความหมาย **ภายในกลุ่มของตัวเองเท่านั้น** ไม่ใช่ลำดับรวมทั้งทำเนียบ
+///    ลำดับของ *กลุ่ม* อยู่ที่ StaffDepartment.order — แอดมินจัดผ่านปุ่ม ▲▼ ที่ /admin/staff
 /// ไม่มี publish/slug/tags/author — เป็นข้อมูลคงที่ ไม่ใช่คอนเทนต์ที่มีวันเผยแพร่
 model Staff {
   id         String   @id @default(cuid())
   name       String
   position   String // ตำแหน่ง เช่น ผู้อำนวยการ, ครูชำนาญการ
-  department String? // กลุ่มสาระ/ฝ่าย
+  department String? // กลุ่มสาระ/ฝ่าย — จับคู่กับ StaffDepartment.name ด้วย "ชื่อตรงกัน" (ไม่ใช่ FK)
   photo      String? // Cloudinary secure_url
   email      String?
   phone      String?
@@ -226,7 +228,26 @@ model Staff {
   updatedAt  DateTime @updatedAt
 
   @@index([order])
+  @@index([department])
   @@map("staff")
+}
+
+/// ลำดับหัวข้อกลุ่ม/ฝ่ายบนหน้าทำเนียบ (เช่น ฝ่ายบริหารต้องอยู่บนสุดเสมอ)
+///
+/// **จงใจไม่ทำเป็น FK จาก Staff** — `Staff.department` ยังเป็นข้อความพิมพ์อิสระเหมือนเดิม
+/// แถวในตารางนี้ถูก upsert ให้อัตโนมัติตอนบันทึกบุคลากร แอดมินจึงไม่ต้องมาสร้าง "กลุ่ม" ก่อน
+/// (แลกกับการที่แถวกำพร้าอาจค้างไว้ตอนเปลี่ยนชื่อฝ่าย — ไม่กระทบการแสดงผล กลุ่มที่ไม่มีคนไม่ถูกเรนเดอร์)
+///
+/// คนที่ไม่ได้กรอกฝ่าย (department = null) รวมเป็นกลุ่ม "บุคลากรอื่น ๆ" ที่ **อยู่ล่างสุดเสมอ**
+/// — ไม่มีแถวในตารางนี้ และเลื่อนลำดับไม่ได้โดยตั้งใจ
+model StaffDepartment {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([order])
+  @@map("staff_department")
 }
 
 /// อัลบั้มภาพกิจกรรม — มีหลายรูป (Photo) · likeCount denormalized (ปุ่มไลก์สาธารณะ Phase 4.6)

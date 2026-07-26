@@ -17,14 +17,7 @@ import { SubmitButton } from "@/components/admin/submit-button";
 import { staffFormSchema, type StaffFormValues } from "@/lib/validations/staff";
 import { createStaff, updateStaff } from "@/server/actions/staff";
 
-export function StaffForm({
-  staff,
-  defaultOrder = "0",
-}: {
-  staff?: StaffFormValues & { id: string };
-  /** ลำดับที่แนะนำสำหรับรายการใหม่ (max+1) — ให้ไม่ต้องคิดเลขเอง */
-  defaultOrder?: string;
-}) {
+export function StaffForm({ staff }: { staff?: StaffFormValues & { id: string } }) {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -44,7 +37,6 @@ export function StaffForm({
       phone: "",
       bio: "",
       photo: "",
-      order: defaultOrder,
       isActive: true,
     },
   });
@@ -149,18 +141,11 @@ export function StaffForm({
               />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="order">ลำดับการแสดง</Label>
-              <Input
-                id="order"
-                type="number"
-                min={0}
-                inputMode="numeric"
-                aria-invalid={!!errors.order}
-                {...register("order")}
-              />
-              <p className="text-xs text-muted-foreground">เลขน้อยแสดงก่อน (0, 1, 2, …)</p>
-              {errors.order && <p className="text-sm text-destructive">{errors.order.message}</p>}
+            <div className="rounded-lg border border-dashed border-border px-3 py-2.5">
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium text-foreground">ลำดับการแสดง</span> จัดที่หน้ารายชื่อ
+                ด้วยปุ่มลูกศร ▲▼ — คนที่เพิ่มใหม่จะไปต่อท้ายกลุ่ม/ฝ่ายของตัวเอง
+              </p>
             </div>
 
             <div className="flex gap-2">

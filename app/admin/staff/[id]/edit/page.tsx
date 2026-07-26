@@ -22,7 +22,6 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
       phone: true,
       bio: true,
       photo: true,
-      order: true,
       isActive: true,
     },
   });
@@ -43,7 +42,6 @@ export default async function EditStaffPage({ params }: { params: Promise<{ id: 
           phone: staff.phone ?? "",
           bio: staff.bio ?? "",
           photo: staff.photo ?? "",
-          order: String(staff.order),
           isActive: staff.isActive,
         }}
       />

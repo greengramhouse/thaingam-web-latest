@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { UserRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { cloudinaryUrl } from "@/lib/image-url";
+import { groupStaffByDepartment } from "@/lib/staff";
 import { PageHero } from "@/components/public/page-hero";
 
 /**
@@ -17,36 +18,21 @@ export const metadata: Metadata = {
   description: "คณะผู้บริหาร ครู และบุคลากรทางการศึกษาของโรงเรียนชุมชนวัดไทยงาม",
 };
 
-type StaffMember = {
-  id: string;
-  name: string;
-  position: string;
-  department: string | null;
-  photo: string | null;
-};
-
-const OTHER_GROUP = "บุคลากรอื่น ๆ";
 // สีแถบหัวกลุ่ม วนตามลำดับกลุ่ม (แบรนด์ → ฟ้า → มิ้นต์)
 const BAR_COLORS = ["bg-primary", "bg-sky", "bg-mint"];
 
 export default async function StaffPage() {
-  const staff = await prisma.staff.findMany({
-    where: { isActive: true },
-    orderBy: [{ order: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, position: true, department: true, photo: true },
-  });
+  const [staff, departments] = await Promise.all([
+    prisma.staff.findMany({
+      where: { isActive: true },
+      // `order` เรียงกันเองภายในกลุ่ม — ลำดับ *กลุ่ม* มาจาก StaffDepartment (แอดมินจัดเองได้)
+      orderBy: [{ order: "asc" }, { name: "asc" }],
+      select: { id: true, name: true, position: true, department: true, photo: true },
+    }),
+    prisma.staffDepartment.findMany({ select: { name: true, order: true } }),
+  ]);
 
-  // จัดกลุ่มตามแผนก คงลำดับการพบครั้งแรก (staff เรียง order แล้ว → กลุ่มของคนลำดับต้นมาก่อน)
-  const groups: { name: string; members: StaffMember[] }[] = [];
-  for (const s of staff) {
-    const key = s.department?.trim() || OTHER_GROUP;
-    let group = groups.find((g) => g.name === key);
-    if (!group) {
-      group = { name: key, members: [] };
-      groups.push(group);
-    }
-    group.members.push(s);
-  }
+  const groups = groupStaffByDepartment(staff, new Map(departments.map((d) => [d.name, d.order])));
 
   return (
     <>
@@ -64,10 +50,10 @@ export default async function StaffPage() {
           </div>
         ) : (
           groups.map((group, gi) => (
-            <section key={group.name} className={gi > 0 ? "mt-11" : ""}>
+            <section key={group.key ?? "__other"} className={gi > 0 ? "mt-11" : ""}>
               <h2 className="mb-[18px] flex items-center gap-2.5 text-xl font-semibold">
                 <span className={`h-[22px] w-1 rounded-full ${BAR_COLORS[gi % BAR_COLORS.length]}`} aria-hidden="true" />
-                {group.name}
+                {group.label}
               </h2>
               <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
                 {group.members.map((m) => (
