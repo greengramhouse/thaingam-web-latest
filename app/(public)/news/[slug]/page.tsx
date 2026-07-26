@@ -132,11 +132,15 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ slu
             <CoverImage
               src={news.coverImage}
               alt={news.title}
-              ratio="aspect-[16/9]"
+              natural
+              ratio="aspect-[16/9]" /* ใช้เฉพาะกรณีไม่มีรูป */
               rounded="rounded-2xl"
               iconClassName="size-10"
               width={1000}
               priority // รูปปกข่าว = ภาพ LCP ของหน้านี้
+              /* ประกาศ A4 แนวตั้งเต็มความกว้างคอนเทนต์จะสูงเกิน 1000px ต้องเลื่อนยาวกว่าจะถึงเนื้อหา
+                 → จำกัดความสูงแล้วจัดกลาง ภาพยังเห็นเต็มใบ ไม่โดนครอป */
+              className="mx-auto max-h-[640px] w-auto"
             />
           </div>
 

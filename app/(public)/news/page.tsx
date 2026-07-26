@@ -153,16 +153,22 @@ async function NewsResults({
             </p>
           </div>
         ) : (
-          <div className="grid gap-[22px] sm:grid-cols-2 lg:grid-cols-3">
+          /* `items-start` สำคัญ — ไม่งั้น grid ยืดทุกใบในแถวให้สูงเท่าใบที่สูงสุด
+             ภาพแนวนอนจะโดนดันให้มีช่องว่างใต้ข้อความ · รูปข่าวจริงมีทั้งประกาศ A4 แนวตั้ง
+             และภาพกิจกรรมแนวนอนคละกัน จึงโชว์ตามสัดส่วนจริงแทนการยัดลงกรอบเดียว */
+          <div className="grid items-start gap-x-[22px] gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
             {news.map((n) => (
-              <Link
-                key={n.slug}
-                href={`/news/${n.slug}`}
-                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-              >
-                <CoverImage src={n.coverImage} ratio="aspect-[16/9]" hover />
-                <div className="flex flex-1 flex-col p-[18px]">
-                  <div className="mb-2.5 flex items-center gap-2">
+              <Link key={n.slug} href={`/news/${n.slug}`} className="group flex flex-col">
+                <CoverImage
+                  src={n.coverImage}
+                  natural
+                  rounded="rounded-2xl"
+                  ratio="aspect-[16/10]" /* ใช้เฉพาะกรณีไม่มีรูป */
+                  hover
+                  width={700}
+                />
+                <div className="flex flex-col px-0.5 pt-3">
+                  <div className="mb-2 flex items-center gap-2">
                     {n.category && (
                       <span className="rounded-full bg-sky-muted px-2.5 py-0.5 text-xs font-medium text-sky-foreground">
                         {n.category.name}
@@ -172,7 +178,7 @@ async function NewsResults({
                       {formatThaiDate(n.publishedAt ?? n.createdAt, "medium")}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-[16.5px] font-semibold leading-snug group-hover:text-primary">
+                  <h3 className="mb-1.5 text-[16.5px] font-semibold leading-snug group-hover:text-primary">
                     {n.title}
                   </h3>
                   {n.excerpt && (

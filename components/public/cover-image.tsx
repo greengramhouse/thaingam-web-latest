@@ -5,8 +5,14 @@ import { cloudinaryUrl } from "@/lib/image-url";
 /**
  * รูปปกที่แสดง **ทั้งภาพ ไม่ครอป** — รองรับภาพแนวตั้ง/แนวนอนคละกัน
  *
- * ภาพจริง = `object-contain` (เห็นเต็มใบ) ซ้อนบนพื้นหลัง = ภาพเดิมเบลอ `object-cover`
- * (เติมกรอบให้เต็ม ไม่เหลือช่องว่างโล่ง) · โหลด URL เดียวกัน browser cache ให้ ยิงเน็ตครั้งเดียว
+ * มีสองโหมด:
+ * - **กรอบตายตัว** (ค่าเริ่มต้น) — ภาพจริง `object-contain` ซ้อนบนพื้นหลังภาพเดิมเบลอ `object-cover`
+ *   ใช้ตอนต้องการให้ทุกใบสูงเท่ากัน · โหลด URL เดียวกันทั้งสองชั้น เบราว์เซอร์ยิงเน็ตครั้งเดียว
+ * - **`natural`** — ไม่มีกรอบ ภาพสูงตามสัดส่วนจริง ไม่ต้องมีพื้นหลังเบลอเพราะไม่เหลือที่ว่าง
+ *
+ * ⚠️ **โหมด `natural` ทำให้เกิด layout shift ตอนโหลด** — เราเก็บแค่ URL ลง DB ไม่ได้เก็บ
+ *    width/height (แอดมินวางลิงก์โดเมนไหนก็ได้ ไม่ใช่แค่ Cloudinary) เบราว์เซอร์เลยจองที่ล่วงหน้าไม่ได้
+ *    `bg-muted` ที่ wrapper ช่วยให้ไม่เห็นเป็นช่องขาววูบ · ถ้าจะกำจัดจริงต้องเก็บขนาดลง DB ตอนอัปโหลด
  */
 export function CoverImage({
   src,
@@ -17,6 +23,8 @@ export function CoverImage({
   iconClassName = "size-8",
   width = 800,
   priority = false,
+  natural = false,
+  className,
 }: {
   src: string | null;
   alt?: string;
@@ -28,6 +36,10 @@ export function CoverImage({
   width?: number;
   /** รูปเด่นบนสุดของหน้า (LCP) → โหลดทันทีไม่ lazy */
   priority?: boolean;
+  /** แสดงตามสัดส่วนจริงของภาพ ไม่ยัดลงกรอบ (`ratio` ถูกใช้เฉพาะตอนไม่มีรูป) */
+  natural?: boolean;
+  /** คลาสเพิ่มบน `<img>` — เช่น `max-h-[600px] w-auto` ตอนอยากจำกัดความสูงในโหมด natural */
+  className?: string;
 }) {
   if (!src) {
     return (
@@ -37,8 +49,30 @@ export function CoverImage({
     );
   }
 
-  // โหลด URL เดียวกันทั้งพื้นหลังเบลอและภาพจริง → เบราว์เซอร์ยิงเน็ตครั้งเดียว
   const optimized = cloudinaryUrl(src, width);
+
+  if (natural) {
+    return (
+      // wrapper มีไว้กันภาพล้นตอน hover scale เท่านั้น — **ห้ามใส่ `bg-muted` ที่นี่**
+      // เพราะถ้าผู้เรียกจำกัดความกว้างภาพ (`w-auto` + `max-h-*`) พื้นหลังจะโผล่เป็นแถบเทาข้างภาพ
+      <div className={cn("overflow-hidden", rounded)}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- URL จากโดเมนใดก็ได้ที่แอดมินวาง */}
+        <img
+          src={optimized}
+          alt={alt}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+          fetchPriority={priority ? "high" : undefined}
+          className={cn(
+            "block h-auto w-full bg-muted transition-transform duration-300",
+            rounded,
+            hover && "group-hover:scale-[1.03]",
+            className,
+          )}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("relative overflow-hidden bg-muted", ratio, rounded)}>
